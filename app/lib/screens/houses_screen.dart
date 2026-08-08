@@ -5,14 +5,18 @@ import '../models/house.dart';
 import '../services/storage_service.dart';
 
 class HousesScreen extends StatefulWidget {
-  const HousesScreen({super.key});
+  const HousesScreen({super.key, this.storageService});
+
+  /// Allows injecting a fake/in-memory service in tests to avoid hitting a
+  /// real database.
+  final StorageService? storageService;
 
   @override
   State<HousesScreen> createState() => _HousesScreenState();
 }
 
 class _HousesScreenState extends State<HousesScreen> {
-  final StorageService _storage = StorageService();
+  late final StorageService _storage = widget.storageService ?? StorageService();
   final List<House> _houses = <House>[];
   int? _activeHouseId;
   bool _isLoading = true;
