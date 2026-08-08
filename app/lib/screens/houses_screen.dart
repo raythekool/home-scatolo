@@ -83,6 +83,7 @@ class _HousesScreenState extends State<HousesScreen> {
       _houses.add(house.copyWith(id: id));
       _activeHouseId = id;
     });
+    if (!ctx.mounted) return;
     Navigator.of(ctx).pop();
   }
 

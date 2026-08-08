@@ -96,6 +96,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
     setState(() {
       _rooms.add(room.copyWith(id: id));
     });
+    if (!ctx.mounted) return;
     Navigator.of(ctx).pop();
   }
 

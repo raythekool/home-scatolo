@@ -112,8 +112,9 @@ class _ContainersScreenState extends State<ContainersScreen> {
                    final int id = await _storage.insertContainer(container);
                    if (!mounted) return;
                    setState(() {
-                     _containers.add(container.copyWith(id: id));
+                    _containers.add(container.copyWith(id: id));
                    });
+                   if (!ctx.mounted) return;
                    Navigator.of(ctx).pop();
                  },
                   child: const Text('Aggiungi'),
