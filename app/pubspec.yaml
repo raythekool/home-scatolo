@@ -11,6 +11,7 @@ dependencies:
   go_router: ^14.0.0
   sqflite: ^2.3.0
   sqflite_common_ffi: ^2.3.0
+  sqflite_common_ffi_web: ^0.4.2+1
   path: ^1.9.0
   image_picker: ^1.1.0
   http: ^1.2.0

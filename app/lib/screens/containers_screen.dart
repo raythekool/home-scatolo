@@ -1,18 +1,60 @@
 import 'package:flutter/material.dart';
 
 import '../models/container.dart' as models;
+import '../services/storage_service.dart';
 
 class ContainersScreen extends StatefulWidget {
-  const ContainersScreen({super.key});
+  const ContainersScreen({
+    super.key,
+    required this.roomId,
+  });
+
+  final int? roomId;
 
   @override
   State<ContainersScreen> createState() => _ContainersScreenState();
 }
 
 class _ContainersScreenState extends State<ContainersScreen> {
+  final StorageService _storage = StorageService();
   final List<models.Container> _containers = <models.Container>[];
+  bool _isLoading = true;
 
   static const List<models.ContainerType> _types = models.ContainerType.values;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadContainers();
+  }
+
+  @override
+  void didUpdateWidget(ContainersScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.roomId != widget.roomId) {
+      _loadContainers();
+    }
+  }
+
+  Future<void> _loadContainers() async {
+    final int? roomId = widget.roomId;
+    if (roomId == null) {
+      setState(() {
+        _containers.clear();
+        _isLoading = false;
+      });
+      return;
+    }
+    final List<models.Container> containers =
+        await _storage.getContainers(roomId);
+    if (!mounted) return;
+    setState(() {
+      _containers
+        ..clear()
+        ..addAll(containers);
+      _isLoading = false;
+    });
+  }
 
   void _showAddDialog() {
     final TextEditingController nameController = TextEditingController();
@@ -58,19 +100,22 @@ class _ContainersScreenState extends State<ContainersScreen> {
                   child: const Text('Annulla'),
                 ),
                 FilledButton(
-                  onPressed: () {
+                 onPressed: () async {
                     final String name = nameController.text.trim();
-                    if (name.isEmpty) return;
-                    setState(() {
-                      _containers.add(models.Container(
-                        id: _containers.length + 1,
-                        name: name,
-                        type: selectedType,
-                        roomId: 0,
-                      ));
-                    });
-                    Navigator.of(ctx).pop();
-                  },
+                   final int? roomId = widget.roomId;
+                   if (name.isEmpty || roomId == null) return;
+                   final models.Container container = models.Container(
+                     name: name,
+                     type: selectedType,
+                     roomId: roomId,
+                   );
+                   final int id = await _storage.insertContainer(container);
+                   if (!mounted) return;
+                   setState(() {
+                     _containers.add(container.copyWith(id: id));
+                   });
+                   Navigator.of(ctx).pop();
+                 },
                   child: const Text('Aggiungi'),
                 ),
               ],
@@ -87,7 +132,11 @@ class _ContainersScreenState extends State<ContainersScreen> {
       appBar: AppBar(
         title: const Text('Contenitori'),
       ),
-      body: _containers.isEmpty
+      body: widget.roomId == null
+          ? const Center(child: Text('Seleziona una stanza prima.'))
+          : _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _containers.isEmpty
           ? const Center(
               child: Text('Nessun contenitore. Aggiungine uno!'))
           : ListView.builder(
@@ -102,7 +151,7 @@ class _ContainersScreenState extends State<ContainersScreen> {
               },
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showAddDialog,
+        onPressed: widget.roomId == null ? null : _showAddDialog,
         tooltip: 'Aggiungi contenitore',
         child: const Icon(Icons.add),
       ),

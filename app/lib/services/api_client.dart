@@ -21,7 +21,7 @@ class ApiClient {
             'Content-Type': 'application/json',
           },
           body: jsonEncode(<String, dynamic>{
-            'image': base64Image,
+            'image_base64': base64Image,
           }),
         )
         .timeout(
@@ -34,11 +34,15 @@ class ApiClient {
     }
 
     final dynamic decoded = jsonDecode(response.body);
-    if (decoded is! List) {
+    if (decoded is! Map) {
+      throw Exception('Invalid recognition response format');
+    }
+    final dynamic items = decoded['items'];
+    if (items is! List) {
       throw Exception('Invalid recognition response format');
     }
 
-    return decoded.map<Map<String, dynamic>>((dynamic entry) {
+    return items.map<Map<String, dynamic>>((dynamic entry) {
       if (entry is Map<String, dynamic>) {
         return entry;
       }

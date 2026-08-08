@@ -1,16 +1,58 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../models/room.dart';
+import '../services/storage_service.dart';
 
 class RoomsScreen extends StatefulWidget {
-  const RoomsScreen({super.key});
+  const RoomsScreen({
+    super.key,
+    required this.houseId,
+  });
+
+  final int? houseId;
 
   @override
   State<RoomsScreen> createState() => _RoomsScreenState();
 }
 
 class _RoomsScreenState extends State<RoomsScreen> {
+  final StorageService _storage = StorageService();
   final List<Room> _rooms = <Room>[];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRooms();
+  }
+
+  @override
+  void didUpdateWidget(RoomsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.houseId != widget.houseId) {
+      _loadRooms();
+    }
+  }
+
+  Future<void> _loadRooms() async {
+    final int? houseId = widget.houseId;
+    if (houseId == null) {
+      setState(() {
+        _rooms.clear();
+        _isLoading = false;
+      });
+      return;
+    }
+    final List<Room> rooms = await _storage.getRooms(houseId);
+    if (!mounted) return;
+    setState(() {
+      _rooms
+        ..clear()
+        ..addAll(rooms);
+      _isLoading = false;
+    });
+  }
 
   void _showAddDialog() {
     final TextEditingController controller = TextEditingController();
@@ -41,11 +83,18 @@ class _RoomsScreenState extends State<RoomsScreen> {
     );
   }
 
-  void _submit(BuildContext ctx, TextEditingController controller) {
+  Future<void> _submit(
+    BuildContext ctx,
+    TextEditingController controller,
+  ) async {
     final String name = controller.text.trim();
-    if (name.isEmpty) return;
+    final int? houseId = widget.houseId;
+    if (name.isEmpty || houseId == null) return;
+    final Room room = Room(name: name, houseId: houseId);
+    final int id = await _storage.insertRoom(room);
+    if (!mounted) return;
     setState(() {
-      _rooms.add(Room(id: _rooms.length + 1, name: name, houseId: 0));
+      _rooms.add(room.copyWith(id: id));
     });
     Navigator.of(ctx).pop();
   }
@@ -56,7 +105,11 @@ class _RoomsScreenState extends State<RoomsScreen> {
       appBar: AppBar(
         title: const Text('Stanze'),
       ),
-      body: _rooms.isEmpty
+      body: widget.houseId == null
+          ? const Center(child: Text('Seleziona una casa prima.'))
+          : _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _rooms.isEmpty
           ? const Center(child: Text('Nessuna stanza. Aggiungine una!'))
           : ListView.builder(
               itemCount: _rooms.length,
@@ -65,11 +118,17 @@ class _RoomsScreenState extends State<RoomsScreen> {
                 return ListTile(
                   leading: const Icon(Icons.room),
                   title: Text(room.name),
+                  onTap: () {
+                    final int? id = room.id;
+                    if (id != null) {
+                      context.go('/containers?roomId=$id');
+                    }
+                  },
                 );
               },
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showAddDialog,
+        onPressed: widget.houseId == null ? null : _showAddDialog,
         tooltip: 'Aggiungi stanza',
         child: const Icon(Icons.add),
       ),

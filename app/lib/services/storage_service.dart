@@ -1,10 +1,11 @@
-import 'package:path/path.dart' as path;
 import 'package:sqflite/sqflite.dart';
 
 import '../models/container.dart' as models;
 import '../models/house.dart';
 import '../models/item.dart';
 import '../models/room.dart';
+import 'database_opener.dart'
+    if (dart.library.html) 'database_opener_web.dart';
 
 class StorageService {
   static const String _dbName = 'home_scatolo.db';
@@ -17,11 +18,8 @@ class StorageService {
   }
 
   Future<Database> _openDb() async {
-    final String databasesPath = await getDatabasesPath();
-    final String databasePath = path.join(databasesPath, _dbName);
-
-    return openDatabase(
-      databasePath,
+    return openHomeScatoloDatabase(
+      dbName: _dbName,
       version: _dbVersion,
       onCreate: (Database db, int version) async {
         await db.execute('''
@@ -54,6 +52,12 @@ class StorageService {
             photoPath TEXT,
             containerId INTEGER NOT NULL,
             insertedAt TEXT NOT NULL
+          )
+        ''');
+        await db.execute('''
+          CREATE TABLE app_state (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
           )
         ''');
       },
@@ -112,6 +116,50 @@ class StorageService {
       'items',
       where: 'containerId = ?',
       whereArgs: <Object?>[containerId],
+    );
+    return result.map(Item.fromMap).toList();
+  }
+
+  Future<int?> getActiveHouseId() async {
+    final Database db = await initDb();
+    final List<Map<String, dynamic>> result = await db.query(
+      'app_state',
+      columns: <String>['value'],
+      where: 'key = ?',
+      whereArgs: <Object?>['activeHouseId'],
+      limit: 1,
+    );
+    if (result.isEmpty) return null;
+    return int.tryParse(result.single['value'] as String);
+  }
+
+  Future<void> setActiveHouseId(int houseId) async {
+    final Database db = await initDb();
+    await db.insert(
+      'app_state',
+      <String, Object?>{
+        'key': 'activeHouseId',
+        'value': houseId.toString(),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<Item>> searchItems(String query) async {
+    final String trimmed = query.trim();
+    if (trimmed.isEmpty) return <Item>[];
+
+    final Database db = await initDb();
+    final String pattern = '%${trimmed.toLowerCase()}%';
+    final List<Map<String, dynamic>> result = await db.query(
+      'items',
+      where: '''
+        lower(name) LIKE ?
+        OR lower(category) LIKE ?
+        OR lower(shortDescription) LIKE ?
+      ''',
+      whereArgs: <Object?>[pattern, pattern, pattern],
+      orderBy: 'insertedAt DESC',
     );
     return result.map(Item.fromMap).toList();
   }

@@ -26,13 +26,19 @@ class HomeScatoloApp extends StatelessWidget {
       ),
       GoRoute(
         path: '/rooms',
-        builder: (BuildContext context, GoRouterState state) =>
-            const RoomsScreen(),
+        builder: (BuildContext context, GoRouterState state) {
+          final int? houseId =
+              int.tryParse(state.uri.queryParameters['houseId'] ?? '');
+          return RoomsScreen(houseId: houseId);
+        },
       ),
       GoRoute(
         path: '/containers',
-        builder: (BuildContext context, GoRouterState state) =>
-            const ContainersScreen(),
+        builder: (BuildContext context, GoRouterState state) {
+          final int? roomId =
+              int.tryParse(state.uri.queryParameters['roomId'] ?? '');
+          return ContainersScreen(roomId: roomId);
+        },
       ),
       GoRoute(
         path: '/capture',

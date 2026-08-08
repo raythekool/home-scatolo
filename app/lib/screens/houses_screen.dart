@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../models/house.dart';
+import '../services/storage_service.dart';
 
 class HousesScreen extends StatefulWidget {
   const HousesScreen({super.key});
@@ -10,8 +12,33 @@ class HousesScreen extends StatefulWidget {
 }
 
 class _HousesScreenState extends State<HousesScreen> {
+  final StorageService _storage = StorageService();
   final List<House> _houses = <House>[];
   int? _activeHouseId;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHouses();
+  }
+
+  Future<void> _loadHouses() async {
+    final List<House> houses = await _storage.getHouses();
+    final int? activeHouseId = await _storage.getActiveHouseId();
+    if (!mounted) return;
+    setState(() {
+      _houses
+        ..clear()
+        ..addAll(houses);
+      _activeHouseId = houses.any((House house) => house.id == activeHouseId)
+          ? activeHouseId
+          : houses.isEmpty
+              ? null
+              : houses.first.id;
+      _isLoading = false;
+    });
+  }
 
   void _showAddDialog() {
     final TextEditingController controller = TextEditingController();
@@ -42,18 +69,30 @@ class _HousesScreenState extends State<HousesScreen> {
     );
   }
 
-  void _submit(BuildContext ctx, TextEditingController controller) {
+  Future<void> _submit(
+    BuildContext ctx,
+    TextEditingController controller,
+  ) async {
     final String name = controller.text.trim();
     if (name.isEmpty) return;
+    final House house = House(name: name);
+    final int id = await _storage.insertHouse(house);
+    await _storage.setActiveHouseId(id);
+    if (!mounted) return;
     setState(() {
-      final House house = House(
-        id: _houses.length + 1,
-        name: name,
-      );
-      _houses.add(house);
-      _activeHouseId ??= house.id;
+      _houses.add(house.copyWith(id: id));
+      _activeHouseId = id;
     });
     Navigator.of(ctx).pop();
+  }
+
+  Future<void> _selectHouse(House house) async {
+    final int? id = house.id;
+    if (id == null) return;
+    await _storage.setActiveHouseId(id);
+    if (!mounted) return;
+    setState(() => _activeHouseId = id);
+    context.go('/rooms?houseId=$id');
   }
 
   @override
@@ -62,7 +101,9 @@ class _HousesScreenState extends State<HousesScreen> {
       appBar: AppBar(
         title: const Text('Case'),
       ),
-      body: _houses.isEmpty
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _houses.isEmpty
           ? const Center(child: Text('Nessuna casa. Aggiungine una!'))
           : ListView.builder(
               itemCount: _houses.length,
@@ -80,7 +121,7 @@ class _HousesScreenState extends State<HousesScreen> {
                   trailing: isActive
                       ? const Icon(Icons.check_circle, color: Colors.green)
                       : null,
-                  onTap: () => setState(() => _activeHouseId = house.id),
+                  onTap: () => _selectHouse(house),
                 );
               },
             ),
