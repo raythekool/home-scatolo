@@ -40,4 +40,24 @@ class Item {
       'insertedAt': insertedAt.toIso8601String(),
     };
   }
+
+  Item copyWith({
+    int? id,
+    String? name,
+    String? category,
+    String? shortDescription,
+    String? photoPath,
+    int? containerId,
+    DateTime? insertedAt,
+  }) {
+    return Item(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      category: category ?? this.category,
+      shortDescription: shortDescription ?? this.shortDescription,
+      photoPath: photoPath ?? this.photoPath,
+      containerId: containerId ?? this.containerId,
+      insertedAt: insertedAt ?? this.insertedAt,
+    );
+  }
 }

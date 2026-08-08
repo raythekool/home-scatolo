@@ -24,4 +24,12 @@ class Room {
       'houseId': houseId,
     };
   }
+
+  Room copyWith({int? id, String? name, int? houseId}) {
+    return Room(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      houseId: houseId ?? this.houseId,
+    );
+  }
 }

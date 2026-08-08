@@ -11,13 +11,22 @@ class SearchScreen extends StatelessWidget {
       ),
       body: const Padding(
         padding: EdgeInsets.all(16),
-        child: TextField(
-          decoration: InputDecoration(
-            border: OutlineInputBorder(),
-            hintText: 'Cerca...',
-            prefixIcon: Icon(Icons.search),
-          ),
-        ),
+        child: _SearchField(),
+      ),
+    );
+  }
+}
+
+class _SearchField extends StatelessWidget {
+  const _SearchField();
+
+  @override
+  Widget build(BuildContext context) {
+    return const TextField(
+      decoration: InputDecoration(
+        border: OutlineInputBorder(),
+        hintText: 'Cerca...',
+        prefixIcon: Icon(Icons.search),
       ),
     );
   }
