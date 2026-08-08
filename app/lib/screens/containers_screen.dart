@@ -36,7 +36,7 @@ class _ContainersScreenState extends State<ContainersScreen> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<models.ContainerType>(
-                    value: selectedType,
+                    initialValue: selectedType,
                     decoration: const InputDecoration(labelText: 'Tipo'),
                     items: _types.map((models.ContainerType t) {
                       return DropdownMenuItem<models.ContainerType>(

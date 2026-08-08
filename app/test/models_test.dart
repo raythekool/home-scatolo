@@ -15,7 +15,7 @@ void main() {
     });
 
     test('toMap omits id when null', () {
-      final house = House(name: 'Senza ID');
+      const house = House(name: 'Senza ID');
       expect(house.toMap().containsKey('id'), isFalse);
     });
 
@@ -38,7 +38,7 @@ void main() {
     });
 
     test('toMap omits id when null', () {
-      final room = Room(name: 'Cucina', houseId: 1);
+      const room = Room(name: 'Cucina', houseId: 1);
       expect(room.toMap().containsKey('id'), isFalse);
     });
 
@@ -68,7 +68,7 @@ void main() {
     });
 
     test('toMap omits id when null', () {
-      final container = c.Container(
+      const container = c.Container(
         name: 'Box',
         type: c.ContainerType.scatolone,
         roomId: 1,
@@ -84,7 +84,7 @@ void main() {
     });
 
     test('copyWith', () {
-      final container = c.Container(
+      const container = c.Container(
         id: 3,
         name: 'Armadio',
         type: c.ContainerType.armadio,
