@@ -1,1 +1,24 @@
-PLACEHOLDER_BACKEND_DEPLOY
+name: Deploy Backend
+
+on:
+  push:
+    branches: [main]
+    paths: ["backend/**"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install
+      - run: npm run build --if-present
+      - run: npm test --if-present
+      # Aggiungi qui lo step di deploy verso il provider scelto (Azure Functions, Vercel, ecc.)
+      # usando i secrets configurati nel repository (Settings > Secrets and variables > Actions).
