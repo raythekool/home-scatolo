@@ -40,7 +40,7 @@ app.post('/recognize', async (request: Request, response: Response) => {
     }
 });
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
     console.log(`Home Scatolo backend listening on port ${port}`);
 });
 
