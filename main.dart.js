@@ -91370,7 +91370,7 @@ awc(a,b,c){var s=0,r=A.F(t.QS),q,p=this,o,n,m,l,k,j,i,h
 var $async$CO=A.G(function(d,e){if(d===1)return A.C(e,r)
 for(;;)switch(s){case 0:l=A.du(p.a+"/recognize")
 k=t.N
-j=A.al(["Content-Type","application/json","Bypass-Tunnel-Reminder","true"],k,k)
+j=A.al(["Content-Type","application/json"],k,k)
 i=J.y4(a,new A.a10())
 h=i.$ti.i("ef<1,aq<k,@>>")
 i=A.X(new A.ef(i,new A.a11(),h),h.i("A.E"))
