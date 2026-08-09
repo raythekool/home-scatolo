@@ -7,6 +7,7 @@ Future<Database> openHomeScatoloDatabase({
   required String dbName,
   required int version,
   required OnDatabaseCreateFn onCreate,
+  required OnDatabaseVersionChangeFn onUpgrade,
 }) async {
   if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
     sqfliteFfiInit();
@@ -16,6 +17,7 @@ Future<Database> openHomeScatoloDatabase({
       options: OpenDatabaseOptions(
         version: version,
         onCreate: onCreate,
+        onUpgrade: onUpgrade,
       ),
     );
   }
@@ -27,5 +29,6 @@ Future<Database> openHomeScatoloDatabase({
     databasePath,
     version: version,
     onCreate: onCreate,
+    onUpgrade: onUpgrade,
   );
 }

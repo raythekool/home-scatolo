@@ -5,14 +5,12 @@ class CameraService {
 
   final ImagePicker _picker;
 
-  Future<String?> pickImageFromCamera() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.camera);
-    return image?.path;
+  Future<XFile?> pickImageFromCamera() {
+    return _picker.pickImage(source: ImageSource.camera);
   }
 
-  Future<String?> pickImageFromGallery() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    return image?.path;
+  Future<XFile?> pickImageFromGallery() {
+    return _picker.pickImage(source: ImageSource.gallery);
   }
 
   Future<String?> pickVideoFromCamera() async {

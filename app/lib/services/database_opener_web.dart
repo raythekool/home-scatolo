@@ -5,12 +5,14 @@ Future<Database> openHomeScatoloDatabase({
   required String dbName,
   required int version,
   required OnDatabaseCreateFn onCreate,
+  required OnDatabaseVersionChangeFn onUpgrade,
 }) {
   return databaseFactoryFfiWeb.openDatabase(
     dbName,
     options: OpenDatabaseOptions(
       version: version,
       onCreate: onCreate,
+      onUpgrade: onUpgrade,
     ),
   );
 }

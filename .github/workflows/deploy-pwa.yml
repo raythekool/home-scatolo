@@ -22,7 +22,7 @@ jobs:
           flutter-version: "3.x"
           channel: "stable"
       - run: flutter pub get
-      - run: flutter build web --release --pwa-strategy offline-first
+      - run: flutter build web --release --pwa-strategy offline-first --base-href /home-scatolo/
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:

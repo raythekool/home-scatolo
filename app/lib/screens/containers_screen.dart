@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../models/container.dart' as models;
 import '../services/storage_service.dart';
@@ -100,23 +101,23 @@ class _ContainersScreenState extends State<ContainersScreen> {
                   child: const Text('Annulla'),
                 ),
                 FilledButton(
-                 onPressed: () async {
+                  onPressed: () async {
                     final String name = nameController.text.trim();
-                   final int? roomId = widget.roomId;
-                   if (name.isEmpty || roomId == null) return;
-                   final models.Container container = models.Container(
-                     name: name,
-                     type: selectedType,
-                     roomId: roomId,
-                   );
-                   final int id = await _storage.insertContainer(container);
-                   if (!mounted) return;
-                   setState(() {
-                    _containers.add(container.copyWith(id: id));
-                   });
-                   if (!ctx.mounted) return;
-                   Navigator.of(ctx).pop();
-                 },
+                    final int? roomId = widget.roomId;
+                    if (name.isEmpty || roomId == null) return;
+                    final models.Container container = models.Container(
+                      name: name,
+                      type: selectedType,
+                      roomId: roomId,
+                    );
+                    final int id = await _storage.insertContainer(container);
+                    if (!mounted) return;
+                    setState(() {
+                      _containers.add(container.copyWith(id: id));
+                    });
+                    if (!ctx.mounted) return;
+                    Navigator.of(ctx).pop();
+                  },
                   child: const Text('Aggiungi'),
                 ),
               ],
@@ -136,21 +137,51 @@ class _ContainersScreenState extends State<ContainersScreen> {
       body: widget.roomId == null
           ? const Center(child: Text('Seleziona una stanza prima.'))
           : _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _containers.isEmpty
-          ? const Center(
-              child: Text('Nessun contenitore. Aggiungine uno!'))
-          : ListView.builder(
-              itemCount: _containers.length,
-              itemBuilder: (BuildContext context, int index) {
-                final models.Container container = _containers[index];
-                return ListTile(
-                  leading: const Icon(Icons.inventory_2),
-                  title: Text(container.name),
-                  subtitle: Text(container.type.toValue()),
-                );
-              },
-            ),
+              ? const Center(child: CircularProgressIndicator())
+              : _containers.isEmpty
+                  ? const Center(
+                      child: Text('Nessun contenitore. Aggiungine uno!'))
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+                      itemCount: _containers.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        final models.Container container = _containers[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Card(
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              leading: CircleAvatar(
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer,
+                                child: const Icon(Icons.inventory_2_outlined),
+                              ),
+                              title: Text(container.name),
+                              subtitle: Text(container.type.toValue()),
+                              trailing: IconButton.filledTonal(
+                                icon:
+                                    const Icon(Icons.document_scanner_outlined),
+                                tooltip: 'Scansiona in questo contenitore',
+                                onPressed: container.id == null
+                                    ? null
+                                    : () => context.go(
+                                          '/capture?containerId=${container.id}',
+                                        ),
+                              ),
+                              onTap: container.id == null
+                                  ? null
+                                  : () => context.go(
+                                        '/inventory?containerId=${container.id}&title=${Uri.encodeComponent(container.name)}',
+                                      ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
       floatingActionButton: FloatingActionButton(
         onPressed: widget.roomId == null ? null : _showAddDialog,
         tooltip: 'Aggiungi contenitore',

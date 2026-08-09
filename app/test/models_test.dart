@@ -107,11 +107,26 @@ void main() {
         'photoPath': null,
         'containerId': 3,
         'insertedAt': now.toIso8601String(),
+        'quantity': 2,
       };
       final item = Item.fromMap(map);
       expect(item.id, 4);
       expect(item.name, 'Libro');
+      expect(item.quantity, 2);
       expect(item.toMap(), map);
+    });
+
+    test('fromMap defaults a legacy item quantity to one', () {
+      final item = Item.fromMap(<String, dynamic>{
+        'name': 'Libro',
+        'category': 'libri',
+        'shortDescription': 'Un bel libro',
+        'photoPath': null,
+        'containerId': 3,
+        'insertedAt': DateTime(2024, 1, 1).toIso8601String(),
+      });
+
+      expect(item.quantity, 1);
     });
 
     test('toMap omits id when null', () {
@@ -137,6 +152,21 @@ void main() {
       final updated = item.copyWith(category: 'elettronica');
       expect(updated.category, 'elettronica');
       expect(updated.name, 'Libro');
+      expect(updated.quantity, 1);
+    });
+
+    test('requires a positive quantity', () {
+      expect(
+        () => Item(
+          name: 'Oggetto',
+          category: 'varie',
+          shortDescription: 'desc',
+          containerId: 1,
+          insertedAt: DateTime(2024),
+          quantity: 0,
+        ),
+        throwsAssertionError,
+      );
     });
   });
 }

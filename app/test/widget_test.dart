@@ -43,12 +43,13 @@ void main() {
     expect(find.byIcon(Icons.add), findsOneWidget);
   });
 
-  testWidgets('HousesScreen shows empty state message', (tester) async {
+  testWidgets('HousesScreen offers a quick scan when no house exists', (tester) async {
     await tester.pumpWidget(
       MaterialApp(home: HousesScreen(storageService: _FakeStorageService())),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Nessuna casa. Aggiungine una!'), findsOneWidget);
+    expect(find.text('Inizia dal primo oggetto'), findsOneWidget);
+    expect(find.text('Scansiona subito'), findsOneWidget);
   });
 
   testWidgets('HousesScreen add dialog adds a house', (tester) async {
@@ -69,8 +70,8 @@ void main() {
 
     // The house should now appear in the list
     expect(find.text('Villa Rossi'), findsOneWidget);
-    // Empty state message should be gone
-    expect(find.text('Nessuna casa. Aggiungine una!'), findsNothing);
+    // The quick-scan empty state should be gone.
+    expect(find.text('Inizia dal primo oggetto'), findsNothing);
   });
 }
 

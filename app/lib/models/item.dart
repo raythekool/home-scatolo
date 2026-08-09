@@ -7,7 +7,8 @@ class Item {
     this.photoPath,
     required this.containerId,
     required this.insertedAt,
-  });
+    this.quantity = 1,
+  }) : assert(quantity > 0);
 
   final int? id;
   final String name;
@@ -16,6 +17,7 @@ class Item {
   final String? photoPath;
   final int containerId;
   final DateTime insertedAt;
+  final int quantity;
 
   factory Item.fromMap(Map<String, dynamic> map) {
     return Item(
@@ -26,6 +28,7 @@ class Item {
       photoPath: map['photoPath'] as String?,
       containerId: map['containerId'] as int,
       insertedAt: DateTime.parse(map['insertedAt'] as String),
+      quantity: map['quantity'] as int? ?? 1,
     );
   }
 
@@ -38,6 +41,7 @@ class Item {
       'photoPath': photoPath,
       'containerId': containerId,
       'insertedAt': insertedAt.toIso8601String(),
+      'quantity': quantity,
     };
   }
 
@@ -49,6 +53,7 @@ class Item {
     String? photoPath,
     int? containerId,
     DateTime? insertedAt,
+    int? quantity,
   }) {
     return Item(
       id: id ?? this.id,
@@ -58,6 +63,7 @@ class Item {
       photoPath: photoPath ?? this.photoPath,
       containerId: containerId ?? this.containerId,
       insertedAt: insertedAt ?? this.insertedAt,
+      quantity: quantity ?? this.quantity,
     );
   }
 }
