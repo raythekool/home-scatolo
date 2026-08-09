@@ -12,6 +12,8 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      API_BASE_URL: ${{ vars.API_BASE_URL }}
     defaults:
       run:
         working-directory: app
@@ -22,7 +24,9 @@ jobs:
           flutter-version: "3.x"
           channel: "stable"
       - run: flutter pub get
-      - run: flutter build web --release --pwa-strategy offline-first --base-href /home-scatolo/
+      - run: |
+          test -n "$API_BASE_URL"
+          flutter build web --release --pwa-strategy offline-first --base-href /home-scatolo/ --dart-define=API_BASE_URL="$API_BASE_URL"
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
