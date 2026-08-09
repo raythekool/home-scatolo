@@ -10,11 +10,26 @@ const String _defaultBaseUrl = String.fromEnvironment(
   defaultValue: 'http://localhost:3000',
 );
 const Duration _requestTimeout = Duration(seconds: 30);
+const Duration _healthCheckTimeout = Duration(seconds: 70);
 
 class ApiClient {
-  ApiClient({String? baseUrl}) : baseUrl = baseUrl ?? _defaultBaseUrl;
+  ApiClient({String? baseUrl, http.Client? client})
+      : baseUrl = baseUrl ?? _defaultBaseUrl,
+        _client = client ?? http.Client();
 
   final String baseUrl;
+  final http.Client _client;
+
+  Future<bool> healthCheck() async {
+    try {
+      final http.Response response = await _client
+          .get(Uri.parse('$baseUrl/health'))
+          .timeout(_healthCheckTimeout);
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
 
   Future<List<RecognitionCandidate>> recognize({
     required String imageBase64,
@@ -22,7 +37,7 @@ class ApiClient {
     required List<Item> existingItems,
   }) async {
     final Uri uri = Uri.parse('$baseUrl/recognize');
-    final http.Response response = await http
+    final http.Response response = await _client
         .post(
           uri,
           headers: <String, String>{

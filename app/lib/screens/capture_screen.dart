@@ -36,12 +36,14 @@ class _CaptureScreenState extends State<CaptureScreen> {
   bool _isRecognizing = false;
   bool _isSaving = false;
   bool _isPreparing = true;
+  _BackendStatus _backendStatus = _BackendStatus.checking;
   int? _resolvedContainerId;
 
   @override
   void initState() {
     super.initState();
     _prepareDestination();
+    _checkBackend();
   }
 
   Future<void> _prepareDestination() async {
@@ -52,6 +54,16 @@ class _CaptureScreenState extends State<CaptureScreen> {
       _resolvedContainerId = containerId;
       _isPreparing = false;
     });
+  }
+
+  Future<void> _checkBackend() async {
+    if (mounted) setState(() => _backendStatus = _BackendStatus.checking);
+    final bool isAvailable = await _apiClient.healthCheck();
+    if (!mounted) return;
+    setState(
+      () => _backendStatus =
+          isAvailable ? _BackendStatus.ready : _BackendStatus.unavailable,
+    );
   }
 
   Future<void> _pick(Future<XFile?> Function() picker) async {
@@ -169,8 +181,10 @@ class _CaptureScreenState extends State<CaptureScreen> {
   @override
   Widget build(BuildContext context) {
     final bool hasImage = _imageBytes != null;
-    final bool canRecognize =
-        hasImage && _resolvedContainerId != null && !_isRecognizing;
+    final bool canRecognize = hasImage &&
+        _resolvedContainerId != null &&
+        !_isRecognizing &&
+        _backendStatus == _BackendStatus.ready;
     final bool canSave = _decisions.isNotEmpty && !_isSaving;
 
     return Scaffold(
@@ -192,6 +206,8 @@ class _CaptureScreenState extends State<CaptureScreen> {
                         ),
                         children: <Widget>[
                           _buildScanHeader(context),
+                          const SizedBox(height: 12),
+                          _buildBackendStatus(context),
                           const SizedBox(height: 20),
                           OutlinedButton.icon(
                             onPressed: _isRecognizing
@@ -229,7 +245,8 @@ class _CaptureScreenState extends State<CaptureScreen> {
                             const SizedBox(height: 16),
                             FilledButton.icon(
                               onPressed: canRecognize ? _recognize : null,
-                              icon: _isRecognizing
+                              icon: _isRecognizing ||
+                                      _backendStatus == _BackendStatus.checking
                                   ? const SizedBox.square(
                                       dimension: 18,
                                       child: CircularProgressIndicator(
@@ -238,7 +255,9 @@ class _CaptureScreenState extends State<CaptureScreen> {
                                   : const Icon(Icons.auto_awesome),
                               label: Text(_isRecognizing
                                   ? 'Riconoscimento...'
-                                  : 'Analizza foto'),
+                                  : _backendStatus == _BackendStatus.checking
+                                      ? 'Preparo il riconoscimento...'
+                                      : 'Analizza foto'),
                               style: FilledButton.styleFrom(
                                 minimumSize: const Size.fromHeight(58),
                               ),
@@ -313,6 +332,70 @@ class _CaptureScreenState extends State<CaptureScreen> {
     );
   }
 
+  Widget _buildBackendStatus(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    return switch (_backendStatus) {
+      _BackendStatus.ready => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: colors.secondaryContainer,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Row(
+            children: <Widget>[
+              Icon(Icons.check_circle_outline, size: 18),
+              SizedBox(width: 8),
+              Text('Riconoscimento pronto'),
+            ],
+          ),
+        ),
+      _BackendStatus.checking => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: colors.primaryContainer,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Row(
+            children: <Widget>[
+              SizedBox.square(
+                dimension: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Sto preparando il riconoscimento. Dopo una pausa può richiedere fino a un minuto.',
+                ),
+              ),
+            ],
+          ),
+        ),
+      _BackendStatus.unavailable => Container(
+          padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
+          decoration: BoxDecoration(
+            color: colors.errorContainer,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: <Widget>[
+              Icon(Icons.cloud_off_outlined, color: colors.onErrorContainer),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Il riconoscimento non è disponibile.',
+                  style: TextStyle(color: colors.onErrorContainer),
+                ),
+              ),
+              TextButton(
+                onPressed: _checkBackend,
+                child: const Text('Riprova'),
+              ),
+            ],
+          ),
+        ),
+    };
+  }
+
   Widget _buildDecision(int index) {
     final RecognitionDecision decision = _decisions[index];
     final RecognitionCandidate candidate = decision.candidate;
@@ -368,3 +451,5 @@ class _CaptureScreenState extends State<CaptureScreen> {
     };
   }
 }
+
+enum _BackendStatus { checking, ready, unavailable }
