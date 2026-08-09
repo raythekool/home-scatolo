@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: home-scatolo-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: GITHUB_MODELS_TOKEN
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://raythekool.github.io
+      - key: MODEL_NAME
+        value: openai/gpt-4o

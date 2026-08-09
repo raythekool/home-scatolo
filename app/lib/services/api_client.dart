@@ -27,7 +27,6 @@ class ApiClient {
           uri,
           headers: <String, String>{
             'Content-Type': 'application/json',
-            'Bypass-Tunnel-Reminder': 'true',
           },
           body: jsonEncode(<String, dynamic>{
             'imageBase64': imageBase64,
