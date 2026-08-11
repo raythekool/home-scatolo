@@ -1,0 +1,41 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Flutter (Chrome)",
+            "request": "launch",
+            "type": "dart",
+            "program": "app/lib/main.dart",
+            "cwd": "app",
+            "deviceId": "chrome"
+        },
+        {
+            "name": "Flutter (default device)",
+            "request": "launch",
+            "type": "dart",
+            "program": "app/lib/main.dart",
+            "cwd": "app"
+        },
+        {
+            "name": "Flutter (profile mode)",
+            "request": "launch",
+            "type": "dart",
+            "program": "app/lib/main.dart",
+            "cwd": "app",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "Backend (tsx watch)",
+            "request": "launch",
+            "type": "node",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "dev"
+            ],
+            "cwd": "${workspaceFolder}/backend",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/backend/.env"
+        }
+    ]
+}

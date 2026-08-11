@@ -1,0 +1,32 @@
+{
+    "files.exclude": {
+        "**/.dart_tool": true,
+        "**/build": true
+    },
+    "search.exclude": {
+        "app/build/**": true,
+        "backend/node_modules/**": true,
+        "backend/dist/**": true
+    },
+    "dart.lineLength": 80,
+    "[dart]": {
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true,
+        "editor.rulers": [
+            80
+        ],
+        "editor.selectionHighlight": false,
+        "editor.suggest.snippetsPreventQuickSuggestions": false,
+        "editor.suggestSelection": "first",
+        "editor.tabCompletion": "onlySnippets",
+        "editor.wordBasedSuggestions": "off"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "vscode.typescript-language-features",
+        "editor.formatOnSave": true
+    },
+    "typescript.tsdk": "backend/node_modules/typescript/lib",
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "explicit"
+    }
+}
