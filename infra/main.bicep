@@ -9,13 +9,16 @@ param namePrefix string
 param modelName string = 'gpt-4o'
 
 @description('Exact model version approved by Azure AI Foundry quota in this region.')
-param modelVersion string
+param modelVersion string = ''
 
 @description('Deployment name used by the recognition API.')
 param modelDeploymentName string = 'home-scatolo-vision'
 
 @description('Capacity for the Azure OpenAI standard deployment in thousands of tokens per minute.')
 param modelCapacity int = 1
+
+@description('Set true only after confirming model availability and quota in the chosen region.')
+param deployModel bool = false
 
 @description('Allowed browser origin for the public recognition API.')
 param allowedOrigin string = 'https://raythekool.github.io'
@@ -82,7 +85,7 @@ resource openAi 'Microsoft.CognitiveServices/accounts@2024-10-01' = {
   }
 }
 
-resource modelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-10-01' = {
+resource modelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-10-01' = if (deployModel) {
   parent: openAi
   name: modelDeploymentName
   sku: {
@@ -123,4 +126,4 @@ output containerAppsEnvironmentId string = containerAppsEnvironment.id
 output containerRegistryLoginServer string = registry.properties.loginServer
 output managedIdentityId string = identity.id
 output openAiEndpoint string = 'https://${openAi.properties.customSubDomainName}.openai.azure.com'
-output openAiModelDeployment string = modelDeployment.name
+output openAiModelDeployment string = modelDeploymentName
