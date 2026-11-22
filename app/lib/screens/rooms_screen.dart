@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../models/room.dart';
 import '../services/storage_factory.dart';
 import '../services/storage_service.dart';
+import '../theme/app_theme.dart';
 
 class RoomsScreen extends StatefulWidget {
   const RoomsScreen({
@@ -133,6 +134,9 @@ class _RoomsScreenState extends State<RoomsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Stanze'),
+        actions: const <Widget>[
+          ThemeToggleButton(),
+        ],
       ),
       body: widget.houseId == null
           ? const Center(child: Text('Seleziona una casa prima.'))

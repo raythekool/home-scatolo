@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../models/house.dart';
 import '../services/storage_factory.dart';
 import '../services/storage_service.dart';
+import '../theme/app_theme.dart';
 
 class HousesScreen extends StatefulWidget {
   const HousesScreen({super.key, this.storageService});
@@ -131,6 +132,7 @@ class _HousesScreenState extends State<HousesScreen> {
       appBar: AppBar(
         title: const Text('Case'),
         actions: <Widget>[
+          const ThemeToggleButton(),
           IconButton(
             icon: const Icon(Icons.search),
             tooltip: 'Cerca nell\'inventario',
@@ -232,7 +234,7 @@ class _HousesScreenState extends State<HousesScreen> {
                             isActive ? 'Spazio attivo' : 'Tocca per aprire'),
                         trailing: Icon(
                           isActive ? Icons.check_circle : Icons.chevron_right,
-                          color: isActive ? Colors.green.shade800 : null,
+                          color: isActive ? AppTheme.successColor(context) : null,
                         ),
                         onTap: () => _selectHouse(house),
                       ),

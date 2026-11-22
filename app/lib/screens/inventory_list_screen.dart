@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../models/item.dart';
 import '../services/storage_factory.dart';
 import '../services/storage_service.dart';
+import '../theme/app_theme.dart';
 
 class InventoryListScreen extends StatefulWidget {
   const InventoryListScreen({
@@ -104,6 +105,7 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
           ],
         ),
         actions: <Widget>[
+          const ThemeToggleButton(),
           IconButton(
             icon: const Icon(Icons.search),
             tooltip: 'Cerca in tutta la casa',

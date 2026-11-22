@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
     <title>Home Scatolo — Console Amministrativa</title>
     <link rel="stylesheet" href="/admin/styles.css" />
 </head>
@@ -16,6 +17,16 @@
             </div>
         </div>
         <div class="topbar-actions">
+            <button
+                id="theme-toggle"
+                class="btn btn-ghost-dark btn-sm"
+                type="button"
+                aria-pressed="false"
+                aria-label="Attiva tema scuro"
+            >
+                <span id="theme-toggle-icon" aria-hidden="true">&#127769;</span>
+                <span id="theme-toggle-label">Scuro</span>
+            </button>
             <a class="btn btn-ghost-dark btn-sm" href="/">Apri App PWA</a>
             <span id="session-pill" class="session-pill" hidden></span>
             <button id="logout-btn" class="btn btn-ghost-dark btn-sm" type="button" hidden>Esci</button>
@@ -326,7 +337,7 @@
                         <button class="btn btn-primary" type="submit">Genera token</button>
                     </form>
 
-                    <div id="new-token-banner" class="card" style="background:var(--warn-bg);border-color:#f0c36d;margin-bottom:1rem" hidden>
+                    <div id="new-token-banner" class="card token-banner" hidden>
                         <strong>Copia ora questo token (non verr&agrave; pi&ugrave; mostrato):</strong>
                         <pre id="new-token-value" class="code-block" style="margin:0.5rem 0"></pre>
                     </div>

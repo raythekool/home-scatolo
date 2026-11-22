@@ -7,9 +7,10 @@
 [![Flutter](https://img.shields.io/badge/Frontend-Flutter%20PWA-02569B?logo=flutter&logoColor=white)](app/)
 [![Node 22](https://img.shields.io/badge/Backend-Node.js%2022%20%2B%20SQLite%20FTS5-339933?logo=node.js&logoColor=white)](backend/)
 [![Docker](https://img.shields.io/badge/Deploy-Docker%20%2B%20GHCR%20%2B%20Watchtower-2496ED?logo=docker&logoColor=white)](docker-compose.minipc.yml)
-[![Vision AI](https://img.shields.io/badge/Vision%20AI-Cloud%20%2B%20Ollama%20Fallback-E66B4A)](documentation/DOCUMENTAZIONE_TECNICA.md#-pipeline-vision-ai--fallback-automatico)
+[![Vision AI](https://img.shields.io/badge/Vision%20AI-Cloud%20%2B%20Ollama%20Fallback-3B5BDB)](documentation/DOCUMENTAZIONE_TECNICA.md#-pipeline-vision-ai--fallback-automatico)
 [![Auth](https://img.shields.io/badge/Auth-Cloudflare%20Access%20%7C%20Google%20%7C%20API%20Keys-F38020?logo=cloudflare&logoColor=white)](documentation/DOCUMENTAZIONE_TECNICA.md#-autenticazione-e-sicurezza)
-[![License](https://img.shields.io/badge/License-MIT-146C43.svg)](LICENSE)
+[![Figma](https://img.shields.io/badge/UI%20%26%20Tokens-Figma%20Design%20System-A259FF?logo=figma&logoColor=white)](https://www.figma.com/design/dg84yVcT8nvTzX82zudH7g)
+[![License](https://img.shields.io/badge/License-MIT-127A4E.svg)](LICENSE)
 
 ---
 
@@ -31,6 +32,8 @@ Questo repository organizza la documentazione secondo il framework **[Diátaxis]
 ## ✨ Cosa include il sistema
 
 - 📷 **Scansione AI multi-oggetto (PWA Flutter)**: scatta o seleziona una foto (fino a 5 MB), rivedi gli oggetti riconosciuti e gestisci i duplicati (`Aggiungi`, `Incrementa quantità`, `Ignora`).
+- 🔎 **Ricerca globale & scheda oggetto (PWA Flutter)**: cerca in tutta la casa con percorso completo (`Casa › Stanza › Contenitore`), modifica campi, regola la quantità (`−/+`) o sposta l'oggetto in un altro contenitore.
+- 🎨 **Doppio tema Light / Dark (WCAG AA+) con selettore rapido**: **Light (`Indaco & Grafite`)** + **Dark (`Notte & Ambra`)** disponibili sia in Flutter PWA sia nella console `/admin` (con supporto `prefers-color-scheme` e persistenza `localStorage`), più [Design System su Figma](https://www.figma.com/design/dg84yVcT8nvTzX82zudH7g).
 - 🏠 **Gerarchia completa multi-casa**: `Casa → Stanza → Contenitore (armadio, scatolone, libreria, cassetto) → Oggetto`.
 - 🧠 **Vision AI resiliente con fallback automatico**: usa un provider cloud veloce come primario (**GitHub Models**, **Anthropic Claude**, **OpenAI-compatible**, **Azure AI Foundry**) e passa in automatico a **Ollama locale** sul MiniPC (`qwen2.5vl:3b` / `gemma3:4b`) in caso di errori, timeout o rate limit.
 - 💾 **Persistenza centralizzata SQLite + FTS5**: database `inventory.db` in modalità `WAL` sul MiniPC con ricerca full-text istantanea (anche senza accenti) e percorso completo (`Casa › Stanza › Contenitore`).
@@ -87,7 +90,7 @@ flutter run -d chrome --dart-define=STORAGE_MODE=remote --dart-define=API_BASE_U
 
 ```text
 home-scatolo/
-├── app/                         # Frontend Flutter (Web/PWA, Android, iOS)
+├── app/                         # Frontend Flutter (Web/PWA, Android, iOS) + tema Light/Dark
 ├── backend/                     # Server Node 22 + Express 5 + SQLite FTS5 + Console /admin
 ├── documentation/               # 📚 Documentazione dedicata (Diátaxis + screenshot + SVG)
 │   ├── README.md                #    Indice Diátaxis
@@ -95,6 +98,8 @@ home-scatolo/
 │   ├── DOCUMENTAZIONE_TECNICA.md#    🏗️ Documentazione tecnica (Explanation + Reference + SVG)
 │   └── assets/                  #    Immagini architetturali e screenshot reali
 ├── docs/                        # Documentazione operativa interna (IMPLEMENTATION_STATUS, MINIPC_DEPLOY)
+├── postman/                     # 📮 Contratto API Postman v3 (collection + environments Local/MiniPC)
+├── .agents/skills/              # 🧪 Agenti QA automatizzati (backend-tester & frontend-tester)
 ├── scripts/bootstrap-minipc.sh  # Bootstrap one-shot idempotente per MiniPC Debian
 ├── Dockerfile.minipc            # Immagine all-in-one (Backend + PWA compilata)
 ├── docker-compose.minipc.yml    # Stack produzione MiniPC (GHCR + Watchtower label-scoped)
@@ -107,11 +112,15 @@ home-scatolo/
 ## ✅ Verifiche & Qualità
 
 ```bash
-# Backend (TypeScript strict + 23 test unitari e di integrazione)
+# Backend (TypeScript strict + 25 test unitari e di integrazione)
 cd backend && npm run build && npm test
 
-# Frontend Flutter (lint + widget/service test)
+# Frontend Flutter (lint + widget/service/theme test)
 cd app && flutter analyze && flutter test
+
+# Suite QA complete (backend + frontend contract/a11y/XSS)
+./.agents/skills/backend-tester/scripts/run-backend-qa.sh
+./.agents/skills/frontend-tester/scripts/run-frontend-qa.sh
 ```
 
 ---

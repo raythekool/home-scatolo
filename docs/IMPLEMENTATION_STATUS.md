@@ -85,6 +85,23 @@ The backend most recently passed:
   `./.agents/skills/frontend-tester/scripts/run-frontend-qa.sh`: both PASS
   (Flutter SDK checks skipped locally, pending CI).
 
+## Theming And Design System
+
+The Flutter PWA and the `/admin` console share two WCAG AA+ themes, selectable
+at runtime with a toggle and defaulting to the OS preference:
+
+- Light: Indigo & Graphite (`#3B5BDB` accent on `#F4F6FA`, CTA contrast 5.67:1).
+- Dark: Night & Amber (`#E07A3F` accent on `#11161D`, CTA contrast 6.11:1).
+
+Implementation: [app_theme.dart](../app/lib/theme/app_theme.dart),
+[theme_toggle_test.dart](../app/test/theme_toggle_test.dart),
+[styles.css](../backend/src/admin/public/styles.css) and
+[app.js](../backend/src/admin/public/app.js) (`initTheme`, `localStorage` key
+`hs_theme`). QR labels and print CSS always render on white paper. The Figma
+design system (tokens, components, screens) lives at
+<https://www.figma.com/design/dg84yVcT8nvTzX82zudH7g>. The new Flutter theme
+tests still require `flutter analyze` and `flutter test` in CI.
+
 ## Current Public Frontend
 
 The PWA is published from the `gh-pages` branch through GitHub Actions:

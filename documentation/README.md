@@ -27,7 +27,9 @@ STUDIO ◄─┼─────────────────────�
 | 📘 **[Guida d'Uso](GUIDA_USO.md)** | Utenti di casa & amministratori del MiniPC | Tutorial passo-passo, scansione AI, console `/admin` con screenshot reali, stampa etichette QR, backup/ripristino e interrogazioni da Hermes Agent / Home Assistant |
 | 🏗️ **[Documentazione Tecnica](DOCUMENTAZIONE_TECNICA.md)** | Sviluppatori & sysadmin homelab | Diagrammi architetturali, data model SQLite + FTS5, pipeline Vision AI con fallback Ollama, sicurezza Zero Trust (Cloudflare RS256 / Google OAuth / Scoped Tokens), riferimento completo API REST e CI/CD |
 | 🚀 **[Guida Deploy MiniPC](../docs/MINIPC_DEPLOY.md)** | Operazioni sul MiniPC Debian | Runbook compatto di bootstrap, Cloudflare Tunnel e manutenzione |
-| 📋 **[Implementation Status](../docs/IMPLEMENTATION_STATUS.md)** | Handoff tecnico | Stato verificato di test, CI/CD e storico decisioni |
+| 📋 **[Implementation Status](../docs/IMPLEMENTATION_STATUS.md)** | Handoff tecnico | Stato verificato di test, CI/CD, doppio tema Light/Dark e storico decisioni |
+| 🎨 **[Figma UI & Design System](https://www.figma.com/design/dg84yVcT8nvTzX82zudH7g)** | Design & UI | Token WCAG AA+, Main Components, 4 schermate Flutter PWA e 3 viste Console `/admin` |
+| 📮 **[Postman v3 Collection](../postman/collections/home-scatolo-api/)** | QA & Integrazioni API | Collezione eseguibile in Git + ambienti `Local Dev` e `MiniPC Vaiano` |
 
 ---
 

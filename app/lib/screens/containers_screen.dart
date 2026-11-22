@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../models/container.dart' as models;
 import '../services/storage_factory.dart';
 import '../services/storage_service.dart';
+import '../theme/app_theme.dart';
 
 class ContainersScreen extends StatefulWidget {
   const ContainersScreen({
@@ -164,6 +165,9 @@ class _ContainersScreenState extends State<ContainersScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Contenitori'),
+        actions: const <Widget>[
+          ThemeToggleButton(),
+        ],
       ),
       body: widget.roomId == null
           ? const Center(child: Text('Seleziona una stanza prima.'))

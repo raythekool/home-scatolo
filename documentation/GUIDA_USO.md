@@ -11,6 +11,7 @@
 1. [🎓 Tutorial: Cataloga il tuo primo scatolone in 5 minuti](#-tutorial-cataloga-il-tuo-primo-scatolone-in-5-minuti)
 2. [🖥️ Esplorare la Console Amministrativa (`/admin`)](#️-esplorare-la-console-amministrativa-admin)
 3. [🛠️ Guide Pratiche (How-to)](#️-guide-pratiche-how-to)
+   - [🎨 Cambiare tema Light / Dark (Indaco & Grafite / Notte & Ambra)](#-come-cambiare-tema-chiaro--scuro)
    - [🔐 Accedere con Google o Cloudflare Access](#-come-accedere-con-google-o-cloudflare-access)
    - [🏷️ Stampare e applicare etichette QR sugli scatoloni](#️-come-stampare-etichette-qr-per-gli-scatoloni)
    - [🧠 Scegliere il modello AI o cambiare prompt senza riavviare](#-come-regolare-ai-modello-ollama-e-prompt)
@@ -45,6 +46,10 @@ Prima di salvare, Home Scatolo confronta gli oggetti riconosciuti con quelli gi�
 - 🚫 **Ignora** — scarta eventuali falsi positivi o elementi di sfondo.
 
 Premi **Conferma modifiche**: l'inventario è salvato istantaneamente nel database del MiniPC ed è visibile da tutti i dispositivi!
+
+### Passo 5 — Cerca, modifica o sposta gli oggetti 🔎
+- Tocca l'icona **lente di ingrandimento** nella barra in alto di **Case** o **Inventario** per cercare in tutta la casa: ogni risultato mostra il percorso completo (`Casa › Stanza › Contenitore`).
+- Tocca un oggetto qualsiasi per aprire la **scheda di dettaglio**, regolare la quantità con `−` / `+`, aggiornare nome/note o **spostarlo in un altro contenitore**.
 
 ---
 
@@ -81,6 +86,18 @@ Unico punto per scaricare backup SQLite a caldo, esportare in CSV/JSON, importar
 ---
 
 ## 🛠️ Guide Pratiche (How-to)
+
+### 🎨 Come cambiare tema chiaro / scuro
+
+Sia la **PWA Flutter** sia la **Console `/admin`** supportano due temi WCAG AA+ coordinati:
+- **☀️ Light — Indaco & Grafite**: fondo chiaro `#F4F6FA` con accento indaco `#3B5BDB` (ideale di giorno e alla luce naturale).
+- **🌙 Dark — Notte & Ambra**: fondo scuro `#11161D` con card `#19212B` e accento ambra `#E07A3F` (ideale di sera, in cantina o in garage).
+
+Come cambiare tema al volo:
+- **Sullo smartphone (PWA)**: tocca l'icona **🌙 / ☀️** nella barra in alto delle schermate principali (`Case`, `Stanze`, `Contenitori`, `Inventario`). Di default l'app segue il tema del sistema operativo.
+- **Da desktop (`/admin`)**: clicca il pulsante **🌙 Scuro / ☀️ Chiaro** nella barra blu in alto a destra. La scelta viene salvata nel browser (`localStorage`). Le **etichette QR** e la stampa A4 restano sempre su fondo bianco ad alto contrasto per garantire una scansione perfetta con lo smartphone.
+
+---
 
 ### 🔐 Come accedere con Google o Cloudflare Access
 

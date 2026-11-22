@@ -1,23 +1,102 @@
 :root {
-    --ink: #123447;
-    --ink-soft: #3c5868;
-    --paper: #f4f2ec;
+    color-scheme: light;
+    --ink: #151b2e;
+    --ink-soft: #4c5772;
+    --paper: #f4f6fa;
     --surface: #ffffff;
-    --surface-muted: #f8f7f3;
-    --accent: #c84b28;
-    --accent-hover: #a83c1e;
-    --accent-soft: #fdebe5;
-    --border: #d7deda;
-    --ok: #146c43;
-    --ok-bg: #e7f6ee;
-    --warn: #8a5300;
-    --warn-bg: #fff4df;
-    --danger: #b42318;
-    --danger-bg: #feece9;
+    --surface-muted: #f8f9fc;
+    --topbar-bg: #151b2e;
+    --topbar-sub: #bdc6dd;
+    --accent: #3b5bdb;
+    --accent-hover: #2f4bc4;
+    --accent-fg: #ffffff;
+    --accent-soft: #e8eeff;
+    --accent-soft-fg: #2b48bf;
+    --border: #dce1ec;
+    --ok: #127a4e;
+    --ok-bg: #e4f7ee;
+    --warn: #9a6700;
+    --warn-bg: #fef3d6;
+    --warn-border: #f0c36d;
+    --danger: #c92a2a;
+    --danger-bg: #fce8e8;
+    --danger-border: #f4c7c3;
+    --danger-hover: #f9d2d2;
+    --code-bg: #0f172a;
+    --code-fg: #eef2ff;
+    --toast-bg: #151b2e;
+    --toast-fg: #ffffff;
+    --dialog-backdrop: rgba(21, 27, 46, 0.48);
     --radius: 10px;
-    --shadow: 0 2px 10px rgba(18, 52, 71, 0.06);
+    --shadow: 0 2px 10px rgba(21, 27, 46, 0.06);
     --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+:root[data-theme='dark'] {
+    color-scheme: dark;
+    --ink: #f1f5f9;
+    --ink-soft: #9fb0c3;
+    --paper: #11161d;
+    --surface: #19212b;
+    --surface-muted: #222c38;
+    --topbar-bg: #0c1016;
+    --topbar-sub: #93a6bc;
+    --accent: #e07a3f;
+    --accent-hover: #eb8d57;
+    --accent-fg: #11161d;
+    --accent-soft: #332219;
+    --accent-soft-fg: #f6b187;
+    --border: #2e3b4a;
+    --ok: #34d399;
+    --ok-bg: #132e24;
+    --warn: #fbbf24;
+    --warn-bg: #332710;
+    --warn-border: #6b4e16;
+    --danger: #f87171;
+    --danger-bg: #36191d;
+    --danger-border: #6b2931;
+    --danger-hover: #472026;
+    --code-bg: #0b1016;
+    --code-fg: #e2e8f0;
+    --toast-bg: #222c38;
+    --toast-fg: #f1f5f9;
+    --dialog-backdrop: rgba(5, 8, 12, 0.72);
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+        color-scheme: dark;
+        --ink: #f1f5f9;
+        --ink-soft: #9fb0c3;
+        --paper: #11161d;
+        --surface: #19212b;
+        --surface-muted: #222c38;
+        --topbar-bg: #0c1016;
+        --topbar-sub: #93a6bc;
+        --accent: #e07a3f;
+        --accent-hover: #eb8d57;
+        --accent-fg: #11161d;
+        --accent-soft: #332219;
+        --accent-soft-fg: #f6b187;
+        --border: #2e3b4a;
+        --ok: #34d399;
+        --ok-bg: #132e24;
+        --warn: #fbbf24;
+        --warn-bg: #332710;
+        --warn-border: #6b4e16;
+        --danger: #f87171;
+        --danger-bg: #36191d;
+        --danger-border: #6b2931;
+        --danger-hover: #472026;
+        --code-bg: #0b1016;
+        --code-fg: #e2e8f0;
+        --toast-bg: #222c38;
+        --toast-fg: #f1f5f9;
+        --dialog-backdrop: rgba(5, 8, 12, 0.72);
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    }
 }
 
 *,
@@ -61,7 +140,7 @@ body {
 /* ---- Top Bar ---- */
 
 .topbar {
-    background: var(--ink);
+    background: var(--topbar-bg);
     color: #ffffff;
     padding: 0.75rem 1.25rem;
     display: flex;
@@ -82,7 +161,7 @@ body {
     height: 34px;
     border-radius: 8px;
     background: var(--accent);
-    color: #ffffff;
+    color: var(--accent-fg);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -99,7 +178,7 @@ body {
 
 .brand-subtitle {
     font-size: 0.8rem;
-    color: #c5d7e0;
+    color: var(--topbar-sub);
 }
 
 .topbar-actions {
@@ -285,7 +364,7 @@ body {
 .btn-primary {
     background: var(--accent);
     border-color: var(--accent);
-    color: #ffffff;
+    color: var(--accent-fg);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -295,12 +374,12 @@ body {
 
 .btn-danger {
     background: var(--danger-bg);
-    border-color: #f4c7c3;
+    border-color: var(--danger-border);
     color: var(--danger);
 }
 
 .btn-danger:hover:not(:disabled) {
-    background: #fbd9d5;
+    background: var(--danger-hover);
 }
 
 .btn-ghost-dark {
@@ -343,7 +422,7 @@ body {
     font: inherit;
     font-size: 0.95rem;
     color: var(--ink);
-    background: #ffffff;
+    background: var(--surface);
 }
 
 .field textarea {
@@ -543,7 +622,7 @@ th {
 }
 
 .tree-container-btn {
-    background: #ffffff;
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 6px;
     padding: 0.4rem 0.6rem;
@@ -562,6 +641,7 @@ th {
 .tree-container-btn[aria-pressed='true'] {
     border-color: var(--accent);
     background: var(--accent-soft);
+    color: var(--accent-soft-fg);
 }
 
 /* ---- Login Screen ---- */
@@ -596,11 +676,11 @@ th {
     background: var(--border);
 }
 
-/* ---- Code Block ---- */
+/* ---- Code Block & Token Banner ---- */
 
 .code-block {
-    background: #102533;
-    color: #eef4f7;
+    background: var(--code-bg);
+    color: var(--code-fg);
     padding: 0.85rem 1rem;
     border-radius: 8px;
     font-family: var(--font-mono);
@@ -610,7 +690,14 @@ th {
     word-break: break-all;
 }
 
-/* ---- QR Labels Grid ---- */
+.token-banner {
+    background: var(--warn-bg);
+    border-color: var(--warn-border);
+    color: var(--ink);
+    margin-bottom: 1rem;
+}
+
+/* ---- QR Labels Grid (always crisp light paper for reliable smartphone scanning) ---- */
 
 .qr-grid {
     display: grid;
@@ -619,10 +706,11 @@ th {
 }
 
 .qr-label-card {
-    border: 1px dashed var(--ink-soft);
+    border: 1px dashed #4c5772;
     border-radius: 10px;
     padding: 0.9rem;
     background: #ffffff;
+    color: #151b2e;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -634,28 +722,30 @@ th {
 .qr-label-title {
     font-weight: 700;
     font-size: 1rem;
+    color: #151b2e;
 }
 
 .qr-label-path {
     font-size: 0.82rem;
-    color: var(--ink-soft);
+    color: #4c5772;
 }
 
 .qr-label-url {
     font-family: var(--font-mono);
     font-size: 0.7rem;
-    color: var(--ink-soft);
+    color: #4c5772;
     word-break: break-all;
 }
 
 /* ---- Dialogs (modern-web-guidance: light-dismiss + prevent-page-scroll-under-modal-dialog) ---- */
 
 dialog {
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 1.25rem;
     width: min(520px, calc(100vw - 2rem));
-    box-shadow: 0 18px 40px rgba(18, 52, 71, 0.25);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
     color: var(--ink);
 }
 
@@ -664,7 +754,7 @@ dialog:modal {
 }
 
 dialog::backdrop {
-    background: rgba(18, 52, 71, 0.45);
+    background: var(--dialog-backdrop);
     overflow: hidden;
     overscroll-behavior: contain;
 }
@@ -682,13 +772,13 @@ dialog::backdrop {
     position: fixed;
     inset: auto 1.25rem 1.25rem auto;
     margin: 0;
-    border: none;
+    border: 1px solid var(--border);
     max-width: min(420px, calc(100vw - 2rem));
-    background: var(--ink);
-    color: #ffffff;
+    background: var(--toast-bg);
+    color: var(--toast-fg);
     padding: 0.75rem 0.95rem;
     border-radius: 8px;
-    box-shadow: 0 10px 28px rgba(18, 52, 71, 0.3);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
     font-size: 0.92rem;
     gap: 0.75rem;
     align-items: center;
@@ -703,11 +793,15 @@ dialog::backdrop {
 }
 
 .toast[data-tone='error'] {
-    background: var(--danger);
+    background: #c92a2a;
+    border-color: #c92a2a;
+    color: #ffffff;
 }
 
 .toast[data-tone='ok'] {
-    background: var(--ok);
+    background: #127a4e;
+    border-color: #127a4e;
+    color: #ffffff;
 }
 
 .toast-close-btn {
@@ -738,8 +832,19 @@ dialog::backdrop {
 /* ---- Print Sheet for QR Labels ---- */
 
 @media print {
+    :root,
+    :root[data-theme='dark'] {
+        color-scheme: light;
+        --paper: #ffffff;
+        --surface: #ffffff;
+        --ink: #151b2e;
+        --ink-soft: #4c5772;
+        --border: #dce1ec;
+    }
+
     body {
         background: #ffffff;
+        color: #151b2e;
     }
 
     .topbar,

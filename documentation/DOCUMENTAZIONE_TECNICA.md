@@ -13,7 +13,8 @@
 5. [📖 Riferimento API REST](#-riferimento-api-rest)
 6. [🚀 Pipeline CI/CD & Deploy MiniPC](#-pipeline-cicd--deploy-minipc)
 7. [⚙️ Riferimento Variabili d'Ambiente (`.env`)](#️-riferimento-variabili-dambiente-env)
-8. [🧪 Sviluppo Locale & Test Suite](#-sviluppo-locale--test-suite)
+8. [🎨 Design System & Temi Light/Dark](#-design-system--temi-lightdark)
+9. [🧪 Sviluppo Locale & Test Suite](#-sviluppo-locale--test-suite)
 
 ---
 
@@ -210,6 +211,26 @@ Template completo in [backend/.env.example](../backend/.env.example):
 
 ---
 
+## 🎨 Design System & Temi Light/Dark
+
+Frontend Flutter e console `/admin` condividono gli stessi token cromatici (WCAG AA+), documentati nel file [Figma Home Scatolo — UI & Design System](https://www.figma.com/design/dg84yVcT8nvTzX82zudH7g) (variabili `Home Scatolo Tokens` con `codeSyntax` CSS, 6 Main Components, 4 schermate PWA e 3 viste Admin).
+
+| Token | ☀️ Light — Indaco & Grafite | 🌙 Dark — Notte & Ambra |
+| :--- | :--- | :--- |
+| `paper` (sfondo) | `#F4F6FA` | `#11161D` |
+| `surface` (card) | `#FFFFFF` | `#19212B` |
+| `ink` / `ink-soft` | `#151B2E` / `#4C5772` | `#F1F5F9` / `#9FB0C3` |
+| `accent` (CTA) | `#3B5BDB` (testo `#FFF`, 5.67:1) | `#E07A3F` (testo `#11161D`, 6.11:1) |
+| `accent-soft` | `#E8EEFF` | `#332219` |
+| `border` | `#DCE1EC` | `#2E3B4A` |
+| `ok` / `ok-bg` | `#127A4E` / `#E4F7EE` | `#34D399` / `#132E24` |
+
+- **Flutter**: [app/lib/theme/app_theme.dart](../app/lib/theme/app_theme.dart) espone `AppTheme.light`, `AppTheme.dark`, `AppThemeController` (`ValueNotifier<ThemeMode>`, default `ThemeMode.system`) e il widget `ThemeToggleButton` presente nelle AppBar; collegati in [main.dart](../app/lib/main.dart) con `ValueListenableBuilder`.
+- **Admin `/admin`**: variabili CSS in [styles.css](../backend/src/admin/public/styles.css) (`:root` light, `:root[data-theme='dark']` e `@media (prefers-color-scheme: dark)` come fallback); pulsante `#theme-toggle` in [app.js](../backend/src/admin/public/app.js) (`initTheme()`, `localStorage` chiave `hs_theme`, `aria-pressed`). Etichette QR e `@media print` forzano sempre carta bianca per la leggibilità dei codici.
+- **Test**: [theme_toggle_test.dart](../app/test/theme_toggle_test.dart) verifica lo switch Light ↔ Dark e i token dei due `ThemeData`.
+
+---
+
 ## 🧪 Sviluppo Locale & Test Suite
 
 ### Backend (`backend/`)
@@ -218,7 +239,7 @@ Template completo in [backend/.env.example](../backend/.env.example):
 cd backend
 npm install
 npm run build   # Type-check strict TypeScript (tsc --noEmit)
-npm test        # 23 test (node:test): DB, FTS5, Vision + fallback, Auth RS256/OAuth/Tokens, Admin APIs
+npm test        # 25 test (node:test): DB, FTS5, Vision + fallback, Auth RS256/OAuth/Tokens, Admin APIs
 npm run dev     # Server con live reload (tsx watch)
 ```
 
@@ -237,3 +258,12 @@ flutter pub get
 flutter analyze
 flutter test
 ```
+
+### Agenti QA automatici e contratto API
+
+```bash
+./.agents/skills/backend-tester/scripts/run-backend-qa.sh    # tsc + 25 test + sintassi admin + leak check log
+./.agents/skills/frontend-tester/scripts/run-frontend-qa.sh  # parità StorageService, label form, XSS sink
+```
+
+Il contratto API eseguibile è in [postman/collections/home-scatolo-api](../postman/collections/home-scatolo-api/) (8 richieste con assertion) con gli environment `Local Dev` e `MiniPC Vaiano`.

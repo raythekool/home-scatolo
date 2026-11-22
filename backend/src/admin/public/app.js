@@ -201,9 +201,75 @@ function flattenContainers() {
     return list;
 }
 
+// ---- Theme Switcher (Light: Indaco & Grafite / Dark: Notte & Ambra) ----
+
+const THEME_STORAGE_KEY = 'hs_theme';
+
+function getStoredTheme() {
+    try {
+        const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+        return stored === 'light' || stored === 'dark' ? stored : null;
+    } catch {
+        return null;
+    }
+}
+
+function getPreferredTheme() {
+    const stored = getStoredTheme();
+    if (stored) return stored;
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function applyTheme(theme) {
+    const resolved = theme === 'dark' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = resolved;
+    const btn = $('#theme-toggle');
+    const icon = $('#theme-toggle-icon');
+    const label = $('#theme-toggle-label');
+    if (btn) {
+        const isDark = resolved === 'dark';
+        btn.setAttribute('aria-pressed', String(isDark));
+        btn.setAttribute(
+            'aria-label',
+            isDark
+                ? 'Passa al tema chiaro (Indaco e Grafite)'
+                : 'Passa al tema scuro (Notte e Ambra)',
+        );
+        if (icon) icon.textContent = isDark ? '☀️' : '🌙';
+        if (label) label.textContent = isDark ? 'Chiaro' : 'Scuro';
+    }
+}
+
+function initTheme() {
+    applyTheme(getPreferredTheme());
+    const btn = $('#theme-toggle');
+    if (btn) {
+        btn.addEventListener('click', () => {
+            const current =
+                document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            try {
+                window.localStorage.setItem(THEME_STORAGE_KEY, next);
+            } catch {
+                // Ignore storage quota / privacy mode errors
+            }
+            applyTheme(next);
+        });
+    }
+    const media = window.matchMedia?.('(prefers-color-scheme: dark)');
+    if (media && typeof media.addEventListener === 'function') {
+        media.addEventListener('change', (event) => {
+            if (!getStoredTheme()) {
+                applyTheme(event.matches ? 'dark' : 'light');
+            }
+        });
+    }
+}
+
 // ---- Boot & Authentication ----
 
 async function boot() {
+    initTheme();
     bindTabs();
     bindForms();
     document.querySelectorAll('dialog').forEach(setupModalLightDismiss);
