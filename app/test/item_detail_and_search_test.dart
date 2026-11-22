@@ -104,7 +104,18 @@ void main() {
     await tester.pump();
     expect(find.text('3'), findsOneWidget);
 
-    await tester.tap(find.text('Salva modifiche'));
+    final Finder saveButton = find.text('Salva modifiche');
+    await tester.scrollUntilVisible(
+      saveButton,
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.tap(saveButton);
     await tester.pumpAndSettle();
 
     expect(storage.lastUpdated?.quantity, 3);

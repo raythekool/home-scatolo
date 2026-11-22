@@ -60,44 +60,12 @@ class _HousesScreenState extends State<HousesScreen> {
     }
   }
 
-  void _showAddDialog() {
-    final TextEditingController controller = TextEditingController();
-    showDialog<void>(
+  Future<void> _showAddDialog() async {
+    final String? name = await showDialog<String>(
       context: context,
-      builder: (BuildContext ctx) {
-        return AlertDialog(
-          title: const Text('Nuova casa'),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Nome casa',
-              hintText: 'Es. Casa Vaiano',
-            ),
-            textCapitalization: TextCapitalization.words,
-            onSubmitted: (_) => _submit(ctx, controller),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Annulla'),
-            ),
-            FilledButton(
-              onPressed: () => _submit(ctx, controller),
-              child: const Text('Aggiungi'),
-            ),
-          ],
-        );
-      },
-    ).whenComplete(controller.dispose);
-  }
-
-  Future<void> _submit(
-    BuildContext ctx,
-    TextEditingController controller,
-  ) async {
-    final String name = controller.text.trim();
-    if (name.isEmpty) return;
+      builder: (BuildContext ctx) => const _AddHouseDialog(),
+    );
+    if (name == null || name.isEmpty || !mounted) return;
     try {
       final House house = House(name: name);
       final int id = await _storage.insertHouse(house);
@@ -107,8 +75,6 @@ class _HousesScreenState extends State<HousesScreen> {
         _houses.add(house.copyWith(id: id));
         _activeHouseId = id;
       });
-      if (!ctx.mounted) return;
-      Navigator.of(ctx).pop();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -246,6 +212,56 @@ class _HousesScreenState extends State<HousesScreen> {
         tooltip: 'Aggiungi casa',
         child: const Icon(Icons.add),
       ),
+    );
+  }
+}
+
+class _AddHouseDialog extends StatefulWidget {
+  const _AddHouseDialog();
+
+  @override
+  State<_AddHouseDialog> createState() => _AddHouseDialogState();
+}
+
+class _AddHouseDialogState extends State<_AddHouseDialog> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final String name = _controller.text.trim();
+    if (name.isEmpty) return;
+    Navigator.of(context).pop(name);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Nuova casa'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        decoration: const InputDecoration(
+          labelText: 'Nome casa',
+          hintText: 'Es. Casa Vaiano',
+        ),
+        textCapitalization: TextCapitalization.words,
+        onSubmitted: (_) => _submit(),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('Aggiungi'),
+        ),
+      ],
     );
   }
 }

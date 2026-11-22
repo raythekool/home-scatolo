@@ -73,45 +73,14 @@ class _RoomsScreenState extends State<RoomsScreen> {
     }
   }
 
-  void _showAddDialog() {
-    final TextEditingController controller = TextEditingController();
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext ctx) {
-        return AlertDialog(
-          title: const Text('Nuova stanza'),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Nome stanza',
-              hintText: 'Es. Cantina',
-            ),
-            textCapitalization: TextCapitalization.words,
-            onSubmitted: (_) => _submit(ctx, controller),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Annulla'),
-            ),
-            FilledButton(
-              onPressed: () => _submit(ctx, controller),
-              child: const Text('Aggiungi'),
-            ),
-          ],
-        );
-      },
-    ).whenComplete(controller.dispose);
-  }
-
-  Future<void> _submit(
-    BuildContext ctx,
-    TextEditingController controller,
-  ) async {
-    final String name = controller.text.trim();
+  Future<void> _showAddDialog() async {
     final int? houseId = widget.houseId;
-    if (name.isEmpty || houseId == null) return;
+    if (houseId == null) return;
+    final String? name = await showDialog<String>(
+      context: context,
+      builder: (BuildContext ctx) => const _AddRoomDialog(),
+    );
+    if (name == null || name.isEmpty || !mounted) return;
     try {
       final Room room = Room(name: name, houseId: houseId);
       final int id = await _storage.insertRoom(room);
@@ -119,8 +88,6 @@ class _RoomsScreenState extends State<RoomsScreen> {
       setState(() {
         _rooms.add(room.copyWith(id: id));
       });
-      if (!ctx.mounted) return;
-      Navigator.of(ctx).pop();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -183,6 +150,56 @@ class _RoomsScreenState extends State<RoomsScreen> {
         tooltip: 'Aggiungi stanza',
         child: const Icon(Icons.add),
       ),
+    );
+  }
+}
+
+class _AddRoomDialog extends StatefulWidget {
+  const _AddRoomDialog();
+
+  @override
+  State<_AddRoomDialog> createState() => _AddRoomDialogState();
+}
+
+class _AddRoomDialogState extends State<_AddRoomDialog> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final String name = _controller.text.trim();
+    if (name.isEmpty) return;
+    Navigator.of(context).pop(name);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Nuova stanza'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        decoration: const InputDecoration(
+          labelText: 'Nome stanza',
+          hintText: 'Es. Cantina',
+        ),
+        textCapitalization: TextCapitalization.words,
+        onSubmitted: (_) => _submit(),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('Aggiungi'),
+        ),
+      ],
     );
   }
 }
