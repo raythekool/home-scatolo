@@ -2,24 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/container.dart' as models;
+import '../services/storage_factory.dart';
 import '../services/storage_service.dart';
 
 class ContainersScreen extends StatefulWidget {
   const ContainersScreen({
     super.key,
     required this.roomId,
+    this.storageService,
   });
 
   final int? roomId;
+  final StorageService? storageService;
 
   @override
   State<ContainersScreen> createState() => _ContainersScreenState();
 }
 
 class _ContainersScreenState extends State<ContainersScreen> {
-  final StorageService _storage = StorageService();
+  late final StorageService _storage =
+      widget.storageService ?? createStorageService();
   final List<models.Container> _containers = <models.Container>[];
   bool _isLoading = true;
+  String? _errorMessage;
 
   static const List<models.ContainerType> _types = models.ContainerType.values;
 
@@ -43,18 +48,31 @@ class _ContainersScreenState extends State<ContainersScreen> {
       setState(() {
         _containers.clear();
         _isLoading = false;
+        _errorMessage = null;
       });
       return;
     }
-    final List<models.Container> containers =
-        await _storage.getContainers(roomId);
-    if (!mounted) return;
     setState(() {
-      _containers
-        ..clear()
-        ..addAll(containers);
-      _isLoading = false;
+      _isLoading = true;
+      _errorMessage = null;
     });
+    try {
+      final List<models.Container> containers =
+          await _storage.getContainers(roomId);
+      if (!mounted) return;
+      setState(() {
+        _containers
+          ..clear()
+          ..addAll(containers);
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Impossibile caricare i contenitori. Riprova.';
+      });
+    }
   }
 
   void _showAddDialog() {
@@ -65,7 +83,7 @@ class _ContainersScreenState extends State<ContainersScreen> {
       context: context,
       builder: (BuildContext ctx) {
         return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setDialogState) {
+          builder: (BuildContext dialogContext, StateSetter setDialogState) {
             return AlertDialog(
               title: const Text('Nuovo contenitore'),
               content: Column(
@@ -74,11 +92,15 @@ class _ContainersScreenState extends State<ContainersScreen> {
                   TextField(
                     controller: nameController,
                     autofocus: true,
-                    decoration: const InputDecoration(hintText: 'Nome'),
+                    decoration: const InputDecoration(
+                      labelText: 'Nome contenitore',
+                      hintText: 'Es. Scatolone Cavi',
+                    ),
                     textCapitalization: TextCapitalization.words,
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<models.ContainerType>(
+                    isExpanded: true,
                     initialValue: selectedType,
                     decoration: const InputDecoration(labelText: 'Tipo'),
                     items: _types.map((models.ContainerType t) {
@@ -105,18 +127,27 @@ class _ContainersScreenState extends State<ContainersScreen> {
                     final String name = nameController.text.trim();
                     final int? roomId = widget.roomId;
                     if (name.isEmpty || roomId == null) return;
-                    final models.Container container = models.Container(
-                      name: name,
-                      type: selectedType,
-                      roomId: roomId,
-                    );
-                    final int id = await _storage.insertContainer(container);
-                    if (!mounted) return;
-                    setState(() {
-                      _containers.add(container.copyWith(id: id));
-                    });
-                    if (!ctx.mounted) return;
-                    Navigator.of(ctx).pop();
+                    try {
+                      final models.Container container = models.Container(
+                        name: name,
+                        type: selectedType,
+                        roomId: roomId,
+                      );
+                      final int id = await _storage.insertContainer(container);
+                      if (!mounted) return;
+                      setState(() {
+                        _containers.add(container.copyWith(id: id));
+                      });
+                      if (!ctx.mounted) return;
+                      Navigator.of(ctx).pop();
+                    } catch (_) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Impossibile aggiungere il contenitore.'),
+                        ),
+                      );
+                    }
                   },
                   child: const Text('Aggiungi'),
                 ),
@@ -125,7 +156,7 @@ class _ContainersScreenState extends State<ContainersScreen> {
           },
         );
       },
-    );
+    ).whenComplete(nameController.dispose);
   }
 
   @override
@@ -138,7 +169,24 @@ class _ContainersScreenState extends State<ContainersScreen> {
           ? const Center(child: Text('Seleziona una stanza prima.'))
           : _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : _containers.isEmpty
+              : _errorMessage != null
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Text(_errorMessage!, textAlign: TextAlign.center),
+                            const SizedBox(height: 12),
+                            FilledButton(
+                              onPressed: _loadContainers,
+                              child: const Text('Riprova'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : _containers.isEmpty
                   ? const Center(
                       child: Text('Nessun contenitore. Aggiungine uno!'))
                   : ListView.builder(
@@ -165,7 +213,7 @@ class _ContainersScreenState extends State<ContainersScreen> {
                               trailing: IconButton.filledTonal(
                                 icon:
                                     const Icon(Icons.document_scanner_outlined),
-                                tooltip: 'Scansiona in questo contenitore',
+                                tooltip: 'Scansiona in ${container.name}',
                                 onPressed: container.id == null
                                     ? null
                                     : () => context.go(

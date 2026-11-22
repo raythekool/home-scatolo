@@ -1,0 +1,45 @@
+services:
+  home-scatolo:
+    image: ${HOME_SCATOLO_IMAGE:-ghcr.io/raythekool/home-scatolo:latest}
+    container_name: home-scatolo
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      - PORT=3000
+      - DB_PATH=/data/inventory.db
+      - PUBLIC_WEB_DIR=/app/public
+    ports:
+      # Esposto solo su localhost del MiniPC: cloudflared inoltra verso http://127.0.0.1:3000
+      # Cambia in "3000:3000" se vuoi raggiungerlo direttamente anche da altri dispositivi in LAN
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./data:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    labels:
+      # Watchtower aggiorna SOLO i container con questa label (non tocca HA, Ollama o Hermes)
+      - "com.centurylinklabs.watchtower.enable=true"
+    # Se Ollama, cloudflared o Hermes Agent sono su una rete Docker condivisa, scommenta:
+    # networks:
+    #   - default
+    #   - homelab_net
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: home-scatolo-watchtower
+    restart: unless-stopped
+    environment:
+      - WATCHTOWER_LABEL_ENABLE=true
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=300
+      - WATCHTOWER_ROLLING_RESTART=true
+      - TZ=Europe/Rome
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Se il package GHCR e' privato, monta il config Docker con le credenziali di pull:
+      # - /root/.docker/config.json:/config.json:ro
+
+# networks:
+#   homelab_net:
+#     external: true

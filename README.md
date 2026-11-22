@@ -1,115 +1,121 @@
 # 📦 Home Scatolo
 
-> Inventario di casa con riconoscimento AI degli oggetti — multi-casa, multi-stanza, multi-scatolone.
+> **Inventario domestico intelligente, self-hosted sul tuo MiniPC** — fotografa armadi, scatoloni, scaffali e cassetti, lascia che l'AI riconosca gli oggetti (cloud primario + fallback locale Ollama) e ritrova tutto in un secondo da smartphone, console web `/admin`, **Hermes Agent** o **Home Assistant**.
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
-[![Platform](https://img.shields.io/badge/platform-Web%20%7C%20Android%20%7C%20iOS-informational)](#roadmap)
-[![PWA](https://img.shields.io/badge/PWA-ready-5A0FC8?logo=pwa&logoColor=white)](#deploy-pwa)
-[![AI](https://img.shields.io/badge/AI-GitHub%20Models-181717?logo=github&logoColor=white)](https://github.com/marketplace/models)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/status-in%20sviluppo-yellow.svg)](#roadmap)
+![Home Scatolo — Architettura domestica collegata al MiniPC](documentation/assets/hero-home-scatolo.jpg)
 
-**Home Scatolo** ti permette di fotografare armadi, scatoloni, librerie e contenitori di casa e ottenere automaticamente un inventario ricercabile, grazie al riconoscimento oggetti basato su AI (GitHub Models, es. GPT-4o vision).
+[![Flutter](https://img.shields.io/badge/Frontend-Flutter%20PWA-02569B?logo=flutter&logoColor=white)](app/)
+[![Node 22](https://img.shields.io/badge/Backend-Node.js%2022%20%2B%20SQLite%20FTS5-339933?logo=node.js&logoColor=white)](backend/)
+[![Docker](https://img.shields.io/badge/Deploy-Docker%20%2B%20GHCR%20%2B%20Watchtower-2496ED?logo=docker&logoColor=white)](docker-compose.minipc.yml)
+[![Vision AI](https://img.shields.io/badge/Vision%20AI-Cloud%20%2B%20Ollama%20Fallback-E66B4A)](documentation/DOCUMENTAZIONE_TECNICA.md#-pipeline-vision-ai--fallback-automatico)
+[![Auth](https://img.shields.io/badge/Auth-Cloudflare%20Access%20%7C%20Google%20%7C%20API%20Keys-F38020?logo=cloudflare&logoColor=white)](documentation/DOCUMENTAZIONE_TECNICA.md#-autenticazione-e-sicurezza)
+[![License](https://img.shields.io/badge/License-MIT-146C43.svg)](LICENSE)
 
-## ✨ Funzionalità
+---
 
-- 📷 Cattura foto/video di contenitori (armadi, scatoloni, librerie, cassetti)
-- 🤖 Riconoscimento automatico degli oggetti tramite AI (GitHub Models API)
-- 🏠 Gestione **multi-casa**: configura più abitazioni/proprietà distinte
-- 🚪 Organizzazione per stanza e contenitore all'interno di ogni casa
-- 🔎 Ricerca full-text: "dove ho messo X?" senza aprire scatole a caso
-- 📱 Disponibile come **PWA** (installabile da browser), con build native Android/iOS pianificate
-- 💾 Storage locale offline-first, sync opzionale su cloud
+## 🧭 Mappa della Documentazione (Diátaxis)
 
-## 🏗️ Architettura
+Questo repository organizza la documentazione secondo il framework **[Diátaxis](https://diataxis.fr/)**, separando l'apprendimento pratico, le guide operative, il riferimento tecnico e le spiegazioni architetturali:
 
-```
-home-scatolo/
-├── app/              # Frontend Flutter (Web/PWA, Android, iOS)
-│   ├── lib/
-│   │   ├── models/       # Item, Container, Room, House
-│   │   ├── screens/      # capture, inventory_list, item_detail, search, houses
-│   │   ├── services/     # api_client, storage_service, camera_service
-│   │   └── widgets/
-│   └── web/          # manifest.json, icone PWA
-├── backend/          # Funzione serverless: proxy verso GitHub Models
-│   └── src/
-│       ├── recognize.ts   # chiamata al modello vision
-│       └── auth.ts        # gestione token (mai esposto al client)
-├── docs/             # Documentazione tecnica e prompt versionati
-└── .github/
-    └── workflows/    # CI/CD: test, build PWA, deploy
-```
+| Quadrante Diátaxis | Scopo | Dove andare |
+| :--- | :--- | :--- |
+| 🎓 **Tutorial** *(orientati all'apprendimento)* | Partire da zero e catalogare il tuo primo scatolone in 5 minuti | [📘 Guida d'Uso — Primo avvio](documentation/GUIDA_USO.md#-tutorial-cataloga-il-tuo-primo-scatolone-in-5-minuti) |
+| 🛠️ **How-to Guides** *(orientate al risultato)* | Installare sul MiniPC, configurare Google/Cloudflare Login, stampare etichette QR, fare backup, collegare Hermes Agent | [📘 Guida d'Uso](documentation/GUIDA_USO.md#-guide-pratiche-how-to) · [🚀 Deploy MiniPC](docs/MINIPC_DEPLOY.md) |
+| 📖 **Reference** *(orientata ai fatti)* | Endpoint API REST, schema SQLite + FTS5, variabili `.env`, comandi CLI e test | [🏗️ Documentazione Tecnica — Reference](documentation/DOCUMENTAZIONE_TECNICA.md#-riferimento-api-rest) |
+| 💡 **Explanation** *(orientata alla comprensione)* | Architettura self-hosted, scelta di SQLite WAL/FTS5, fallback Vision AI, modello di sicurezza Zero Trust | [🏗️ Documentazione Tecnica — Architettura](documentation/DOCUMENTAZIONE_TECNICA.md#-architettura-del-sistema) |
 
-Il frontend Flutter non chiama mai direttamente l'API AI con la chiave in chiaro: passa sempre da un backend leggero che nasconde il token GitHub Models, seguendo le best practice di sicurezza.
+👉 Indice completo della cartella dedicata: **[documentation/README.md](documentation/README.md)**
 
-## 🚀 Stack tecnico
+---
 
-| Livello | Tecnologia |
-|---|---|
-| Frontend | Flutter (Web/PWA, Android, iOS) |
-| Riconoscimento AI | [GitHub Models](https://github.com/marketplace/models) (GPT-4o / Llama Vision), via account Copilot Business |
-| Backend | Funzione serverless (Node/TypeScript) da proxy per l'API AI |
-| Storage locale | SQLite (`sqflite`) / Hive |
-| CI/CD | GitHub Actions |
-| Hosting PWA | GitHub Pages / Firebase Hosting |
+## ✨ Cosa include il sistema
 
-## 🧰 Setup locale
+- 📷 **Scansione AI multi-oggetto (PWA Flutter)**: scatta o seleziona una foto (fino a 5 MB), rivedi gli oggetti riconosciuti e gestisci i duplicati (`Aggiungi`, `Incrementa quantità`, `Ignora`).
+- 🏠 **Gerarchia completa multi-casa**: `Casa → Stanza → Contenitore (armadio, scatolone, libreria, cassetto) → Oggetto`.
+- 🧠 **Vision AI resiliente con fallback automatico**: usa un provider cloud veloce come primario (**GitHub Models**, **Anthropic Claude**, **OpenAI-compatible**, **Azure AI Foundry**) e passa in automatico a **Ollama locale** sul MiniPC (`qwen2.5vl:3b` / `gemma3:4b`) in caso di errori, timeout o rate limit.
+- 💾 **Persistenza centralizzata SQLite + FTS5**: database `inventory.db` in modalità `WAL` sul MiniPC con ricerca full-text istantanea (anche senza accenti) e percorso completo (`Casa › Stanza › Contenitore`).
+- 🖥️ **Console Amministrativa Web (`/admin`)**: gestione spazi e oggetti da desktop, diagnostica Ollama live, test foto, **stampa etichette QR per gli scatoloni**, backup SQLite consistente (`VACUUM INTO`), export CSV/JSON, import con dry-run e gestione token API.
+- 🔐 **Autenticazione flessibile**: **Cloudflare Access** (verifica crittografica RS256 con Google IdP), **Google OAuth 2.0** diretto, password con cookie `HttpOnly` e **token API scoped (`read` / `write`)** per **Hermes Agent** e **Home Assistant**.
+- 🚀 **CI/CD Zero-Touch**: ogni push su `main` testa Flutter + Backend, pubblica l'immagine all-in-one su `ghcr.io/raythekool/home-scatolo:latest` e aggiorna automaticamente il MiniPC via Watchtower (o SSH opzionale).
 
-### Prerequisiti
+---
 
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) 3.x+
-- [Node.js](https://nodejs.org/) 20+ (per il backend)
-- Un account GitHub con accesso a [GitHub Models](https://github.com/marketplace/models) (Copilot Business consigliato per limiti più ampi)
+## 🎓 Quick Start (Tutorial rapido)
 
-### Frontend (Flutter)
+### 1. Deploy automatico sul tuo MiniPC (Debian + Docker)
+
+Dopo il primo push su `main` (che pubblica l'immagine su GHCR), esegui **una volta sola** sul MiniPC:
 
 ```bash
-cd app
-flutter pub get
-flutter run -d chrome        # sviluppo web/PWA
-flutter run                  # sviluppo su device Android/iOS collegato
+PUBLIC_HOSTNAME=scatolo.tuodominio.it \
+GITHUB_MODELS_TOKEN=<pat-github-models-read> \
+curl -fsSL https://raw.githubusercontent.com/raythekool/home-scatolo/main/scripts/bootstrap-minipc.sh | bash
 ```
 
-### Backend
+Poi aggiungi il Public Hostname sul tuo **Cloudflare Tunnel** verso `http://127.0.0.1:3000`:
+- 📱 App PWA: `https://scatolo.tuodominio.it/`
+- 🖥️ Console Admin: `https://scatolo.tuodominio.it/admin`
+
+### 2. Sviluppo locale (senza Docker)
+
+**Backend (`backend/` — richiede Node.js 22+):**
 
 ```bash
 cd backend
 npm install
-# Configura il token GitHub Models come variabile d'ambiente:
-# GITHUB_MODELS_TOKEN=<il-tuo-token-con-scope-models:read>
-npm run dev
+cp .env.example .env
+npm run dev       # Avvia su http://localhost:3000 (Admin su /admin)
 ```
 
-> ⚠️ Non committare mai il token in chiaro. Usa un file `.env` (già escluso da `.gitignore`) o i Secrets di GitHub Actions in CI/CD.
-
-## 📱 Deploy PWA
+**Frontend (`app/` — richiede Flutter 3.x):**
 
 ```bash
 cd app
-flutter build web --release --pwa-strategy offline-first
+flutter pub get
+flutter run -d chrome --dart-define=STORAGE_MODE=remote --dart-define=API_BASE_URL=http://localhost:3000
 ```
 
-Il contenuto di `app/build/web` può essere pubblicato su GitHub Pages o Firebase Hosting. Il workflow `.github/workflows/deploy-pwa.yml` automatizza questo step ad ogni push su `main`.
+---
 
-## 🗺️ Roadmap
+## 🗺️ Panoramica Architetturale
 
-- [x] Definizione architettura e struttura repo
-- [ ] Scaffold Flutter (Web + Android + iOS)
-- [ ] Modello dati: House → Room → Container → Item
-- [ ] Integrazione cattura foto/video
-- [ ] Backend proxy verso GitHub Models
-- [ ] Riconoscimento oggetti multi-item per singola foto
-- [ ] Ricerca full-text sull'inventario
-- [ ] Gestione multi-casa (switch tra proprietà)
-- [ ] Deploy PWA su GitHub Pages
-- [ ] Build nativa Android (Play Store)
-- [ ] Build nativa iOS (TestFlight / App Store)
+![Architettura Home Scatolo Self-Hosted](documentation/assets/architecture-overview.svg)
 
-## 🤝 Contribuire
+---
 
-Progetto personale in sviluppo attivo. Issue e suggerimenti sono benvenuti.
+## 📂 Struttura del Repository
+
+```text
+home-scatolo/
+├── app/                         # Frontend Flutter (Web/PWA, Android, iOS)
+├── backend/                     # Server Node 22 + Express 5 + SQLite FTS5 + Console /admin
+├── documentation/               # 📚 Documentazione dedicata (Diátaxis + screenshot + SVG)
+│   ├── README.md                #    Indice Diátaxis
+│   ├── GUIDA_USO.md             #    📘 Documentazione d'uso (Tutorial + How-to + screenshot)
+│   ├── DOCUMENTAZIONE_TECNICA.md#    🏗️ Documentazione tecnica (Explanation + Reference + SVG)
+│   └── assets/                  #    Immagini architetturali e screenshot reali
+├── docs/                        # Documentazione operativa interna (IMPLEMENTATION_STATUS, MINIPC_DEPLOY)
+├── scripts/bootstrap-minipc.sh  # Bootstrap one-shot idempotente per MiniPC Debian
+├── Dockerfile.minipc            # Immagine all-in-one (Backend + PWA compilata)
+├── docker-compose.minipc.yml    # Stack produzione MiniPC (GHCR + Watchtower label-scoped)
+├── docker-compose.yml           # Stack build locale da sorgente
+└── .github/workflows/           # CI/CD: deploy-minipc.yml, flutter-ci.yml, deploy-pwa.yml
+```
+
+---
+
+## ✅ Verifiche & Qualità
+
+```bash
+# Backend (TypeScript strict + 23 test unitari e di integrazione)
+cd backend && npm run build && npm test
+
+# Frontend Flutter (lint + widget/service test)
+cd app && flutter analyze && flutter test
+```
+
+---
 
 ## 📄 Licenza
 
-Distribuito sotto licenza MIT. Vedi [LICENSE](LICENSE) per i dettagli.
+Distribuito sotto licenza **MIT**. Vedi [LICENSE](LICENSE) per i dettagli.

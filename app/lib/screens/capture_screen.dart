@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../models/item.dart';
@@ -9,6 +10,7 @@ import '../models/recognition_candidate.dart';
 import '../services/api_client.dart';
 import '../services/camera_service.dart';
 import '../services/duplicate_matcher.dart';
+import '../services/storage_factory.dart';
 import '../services/storage_service.dart';
 
 class CaptureScreen extends StatefulWidget {
@@ -26,7 +28,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
 
   final CameraService _cameraService = CameraService();
   late final StorageService _storage =
-      widget.storageService ?? StorageService();
+      widget.storageService ?? createStorageService();
   final ApiClient _apiClient = ApiClient();
   final DuplicateMatcher _duplicateMatcher = const DuplicateMatcher();
   XFile? _selectedFile;
@@ -36,6 +38,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
   bool _isRecognizing = false;
   bool _isSaving = false;
   bool _isPreparing = true;
+  String? _prepareError;
   _BackendStatus _backendStatus = _BackendStatus.checking;
   int? _resolvedContainerId;
 
@@ -47,13 +50,26 @@ class _CaptureScreenState extends State<CaptureScreen> {
   }
 
   Future<void> _prepareDestination() async {
-    final int containerId =
-        widget.containerId ?? await _storage.getOrCreateQuickScanContainer();
-    if (!mounted) return;
     setState(() {
-      _resolvedContainerId = containerId;
-      _isPreparing = false;
+      _isPreparing = true;
+      _prepareError = null;
     });
+    try {
+      final int containerId =
+          widget.containerId ?? await _storage.getOrCreateQuickScanContainer();
+      if (!mounted) return;
+      setState(() {
+        _resolvedContainerId = containerId;
+        _isPreparing = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isPreparing = false;
+        _prepareError =
+            'Impossibile preparare il contenitore di destinazione.';
+      });
+    }
   }
 
   Future<void> _checkBackend() async {
@@ -165,7 +181,11 @@ class _CaptureScreenState extends State<CaptureScreen> {
       }
       if (!mounted) return;
       _showMessage('Inventario aggiornato.');
-      Navigator.of(context).pop();
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/inventory?containerId=$containerId');
+      }
     } catch (_) {
       if (mounted) _showMessage('Non è stato possibile salvare le modifiche.');
     } finally {
@@ -192,7 +212,24 @@ class _CaptureScreenState extends State<CaptureScreen> {
       body: SafeArea(
         child: _isPreparing
             ? const Center(child: CircularProgressIndicator())
-            : LayoutBuilder(
+            : _prepareError != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Text(_prepareError!, textAlign: TextAlign.center),
+                          const SizedBox(height: 12),
+                          FilledButton(
+                            onPressed: _prepareDestination,
+                            child: const Text('Riprova'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : LayoutBuilder(
                 builder: (BuildContext context, BoxConstraints constraints) {
                   return Center(
                     child: ConstrainedBox(
@@ -238,8 +275,12 @@ class _CaptureScreenState extends State<CaptureScreen> {
                               borderRadius: BorderRadius.circular(12),
                               child: AspectRatio(
                                 aspectRatio: 4 / 3,
-                                child: Image.memory(_imageBytes!,
-                                    fit: BoxFit.cover),
+                                child: Image.memory(
+                                  _imageBytes!,
+                                  fit: BoxFit.cover,
+                                  semanticLabel:
+                                      'Anteprima della foto selezionata per la scansione',
+                                ),
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -334,7 +375,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
 
   Widget _buildBackendStatus(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
-    return switch (_backendStatus) {
+    final Widget content = switch (_backendStatus) {
       _BackendStatus.ready => Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
@@ -345,7 +386,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
             children: <Widget>[
               Icon(Icons.check_circle_outline, size: 18),
               SizedBox(width: 8),
-              Text('Riconoscimento pronto'),
+              Expanded(child: Text('Riconoscimento pronto')),
             ],
           ),
         ),
@@ -359,7 +400,10 @@ class _CaptureScreenState extends State<CaptureScreen> {
             children: <Widget>[
               SizedBox.square(
                 dimension: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  semanticsLabel: 'Verifica disponibilità riconoscimento',
+                ),
               ),
               SizedBox(width: 12),
               Expanded(
@@ -394,6 +438,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
           ),
         ),
     };
+    return Semantics(container: true, liveRegion: true, child: content);
   }
 
   Widget _buildDecision(int index) {
@@ -417,10 +462,13 @@ class _CaptureScreenState extends State<CaptureScreen> {
             Text(candidate.shortDescription),
             const SizedBox(height: 8),
             DropdownButtonFormField<RecognitionAction>(
+              isExpanded: true,
               initialValue: actions.contains(_selectedActions[index])
                   ? _selectedActions[index]
                   : null,
-              decoration: const InputDecoration(labelText: 'Azione'),
+              decoration: InputDecoration(
+                labelText: 'Azione per ${candidate.name}',
+              ),
               hint: const Text('Scegli cosa fare'),
               items: actions
                   .map(

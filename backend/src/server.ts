@@ -1,56 +1,29 @@
 import 'dotenv/config';
 
-import cors from 'cors';
-import express, { type Request, type Response } from 'express';
+import { createApp } from './app.js';
+import { InventoryDatabase } from './db.js';
+import { resolveVisionProviders } from './vision/providers.js';
 
-import { readFoundryConfig, recognizeWithFoundry } from './foundry_client.js';
-import {
-    parseRecognitionRequest,
-    parseRecognitionResult,
-    RecognitionValidationError,
-    type RecognitionResult,
-} from './recognition.js';
-
-const app = express();
 const port = Number(process.env.PORT ?? 3000);
-const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? 'http://localhost:8080,http://localhost:3000')
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
+const dbPath = process.env.DB_PATH?.trim() || './data/inventory.db';
 
-app.use(cors({ origin: allowedOrigins }));
-app.use(express.json({ limit: '7mb' }));
+const db = new InventoryDatabase(dbPath);
+const app = createApp({ db, environment: process.env });
 
-app.get('/health', (_request: Request, response: Response) => {
-    try {
-        readFoundryConfig(process.env);
-        response.json({ status: 'ok' });
-    } catch (_) {
-        response.status(503).json({ status: 'configuring' });
-    }
+const server = app.listen(port, '0.0.0.0', () => {
+    const providers = resolveVisionProviders(process.env).map((p) => p.name);
+    console.log(
+        `Home Scatolo backend listening on port ${port} (db: ${dbPath}, vision providers: ${providers.join(' -> ') || 'none'})`,
+    );
 });
 
-app.post('/recognize', async (request: Request, response: Response) => {
-    try {
-        const recognitionRequest = parseRecognitionRequest(request.body);
-        const result = await recognizeImage(recognitionRequest);
-        response.json(result);
-    } catch (error) {
-        if (error instanceof RecognitionValidationError) {
-            response.status(400).json({ error: error.message });
-            return;
-        }
-
-        response.status(502).json({ error: 'Recognition is currently unavailable.' });
-    }
-});
-
-app.listen(port, '0.0.0.0', () => {
-    console.log(`Home Scatolo backend listening on port ${port}`);
-});
-
-async function recognizeImage(
-    request: ReturnType<typeof parseRecognitionRequest>,
-): Promise<RecognitionResult> {
-    return parseRecognitionResult(await recognizeWithFoundry(request));
+function shutdown(signal: string): void {
+    console.log(`Received ${signal}, closing Home Scatolo backend...`);
+    server.close(() => {
+        db.close();
+        process.exit(0);
+    });
 }
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));

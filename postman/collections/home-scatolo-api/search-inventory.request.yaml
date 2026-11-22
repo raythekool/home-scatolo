@@ -1,0 +1,22 @@
+$kind: http-request
+name: 'Search Inventory (FTS5 + Path)'
+method: GET
+url: '{{baseUrl}}/api/search?q=hdmi'
+order: 5000
+queryParams:
+  - key: q
+    value: hdmi
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('returns enriched search matches', () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.items).to.be.an('array');
+        if (body.items.length > 0) {
+          pm.expect(body.items[0]).to.have.property('houseName');
+          pm.expect(body.items[0]).to.have.property('roomName');
+          pm.expect(body.items[0]).to.have.property('containerName');
+        }
+      });

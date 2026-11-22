@@ -1,0 +1,28 @@
+$kind: http-request
+name: 'Recognize Image (Vision AI)'
+method: POST
+url: '{{baseUrl}}/api/recognize'
+order: 8000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "imageBase64": "aGVsbG8=",
+      "mimeType": "image/jpeg",
+      "existingItems": []
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('validates recognition contract response', () => {
+        pm.expect([200, 502]).to.include(pm.response.code);
+        if (pm.response.code === 200) {
+          const body = pm.response.json();
+          pm.expect(body.items).to.be.an('array');
+          pm.expect(pm.response.headers.get('X-Vision-Provider')).to.be.a('string');
+        }
+      });

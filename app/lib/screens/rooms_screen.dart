@@ -2,24 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/room.dart';
+import '../services/storage_factory.dart';
 import '../services/storage_service.dart';
 
 class RoomsScreen extends StatefulWidget {
   const RoomsScreen({
     super.key,
     required this.houseId,
+    this.storageService,
   });
 
   final int? houseId;
+  final StorageService? storageService;
 
   @override
   State<RoomsScreen> createState() => _RoomsScreenState();
 }
 
 class _RoomsScreenState extends State<RoomsScreen> {
-  final StorageService _storage = StorageService();
+  late final StorageService _storage =
+      widget.storageService ?? createStorageService();
   final List<Room> _rooms = <Room>[];
   bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -41,17 +46,30 @@ class _RoomsScreenState extends State<RoomsScreen> {
       setState(() {
         _rooms.clear();
         _isLoading = false;
+        _errorMessage = null;
       });
       return;
     }
-    final List<Room> rooms = await _storage.getRooms(houseId);
-    if (!mounted) return;
     setState(() {
-      _rooms
-        ..clear()
-        ..addAll(rooms);
-      _isLoading = false;
+      _isLoading = true;
+      _errorMessage = null;
     });
+    try {
+      final List<Room> rooms = await _storage.getRooms(houseId);
+      if (!mounted) return;
+      setState(() {
+        _rooms
+          ..clear()
+          ..addAll(rooms);
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Impossibile caricare le stanze. Riprova.';
+      });
+    }
   }
 
   void _showAddDialog() {
@@ -64,7 +82,10 @@ class _RoomsScreenState extends State<RoomsScreen> {
           content: TextField(
             controller: controller,
             autofocus: true,
-            decoration: const InputDecoration(hintText: 'Nome stanza'),
+            decoration: const InputDecoration(
+              labelText: 'Nome stanza',
+              hintText: 'Es. Cantina',
+            ),
             textCapitalization: TextCapitalization.words,
             onSubmitted: (_) => _submit(ctx, controller),
           ),
@@ -80,7 +101,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
           ],
         );
       },
-    );
+    ).whenComplete(controller.dispose);
   }
 
   Future<void> _submit(
@@ -90,14 +111,21 @@ class _RoomsScreenState extends State<RoomsScreen> {
     final String name = controller.text.trim();
     final int? houseId = widget.houseId;
     if (name.isEmpty || houseId == null) return;
-    final Room room = Room(name: name, houseId: houseId);
-    final int id = await _storage.insertRoom(room);
-    if (!mounted) return;
-    setState(() {
-      _rooms.add(room.copyWith(id: id));
-    });
-    if (!ctx.mounted) return;
-    Navigator.of(ctx).pop();
+    try {
+      final Room room = Room(name: name, houseId: houseId);
+      final int id = await _storage.insertRoom(room);
+      if (!mounted) return;
+      setState(() {
+        _rooms.add(room.copyWith(id: id));
+      });
+      if (!ctx.mounted) return;
+      Navigator.of(ctx).pop();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossibile aggiungere la stanza.')),
+      );
+    }
   }
 
   @override
@@ -110,9 +138,27 @@ class _RoomsScreenState extends State<RoomsScreen> {
           ? const Center(child: Text('Seleziona una casa prima.'))
           : _isLoading
           ? const Center(child: CircularProgressIndicator())
+          : _errorMessage != null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(_errorMessage!, textAlign: TextAlign.center),
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      onPressed: _loadRooms,
+                      child: const Text('Riprova'),
+                    ),
+                  ],
+                ),
+              ),
+            )
           : _rooms.isEmpty
           ? const Center(child: Text('Nessuna stanza. Aggiungine una!'))
           : ListView.builder(
+              padding: const EdgeInsets.only(bottom: 96),
               itemCount: _rooms.length,
               itemBuilder: (BuildContext context, int index) {
                 final Room room = _rooms[index];

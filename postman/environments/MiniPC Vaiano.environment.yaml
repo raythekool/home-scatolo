@@ -1,0 +1,12 @@
+name: MiniPC Vaiano
+values:
+  - key: baseUrl
+    value: 'https://scatolo.tuodominio.it'
+    enabled: true
+    type: default
+    description: Endpoint pubblico dietro Cloudflare Tunnel
+  - key: apiToken
+    value: ''
+    enabled: true
+    type: secret
+    description: Token API read/write o master configurato sul MiniPC (mai committare)

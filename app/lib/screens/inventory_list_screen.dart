@@ -2,30 +2,47 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/item.dart';
+import '../services/storage_factory.dart';
 import '../services/storage_service.dart';
 
 class InventoryListScreen extends StatefulWidget {
-  const InventoryListScreen({super.key, this.containerId, this.title});
+  const InventoryListScreen({
+    super.key,
+    this.containerId,
+    this.title,
+    this.storageService,
+  });
 
   final int? containerId;
   final String? title;
+  final StorageService? storageService;
 
   @override
   State<InventoryListScreen> createState() => _InventoryListScreenState();
 }
 
 class _InventoryListScreenState extends State<InventoryListScreen> {
-  final StorageService _storage = StorageService();
+  late final StorageService _storage =
+      widget.storageService ?? createStorageService();
   final TextEditingController _searchController = TextEditingController();
   List<Item> _items = <Item>[];
   String _query = '';
   String? _category;
   bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
     _loadItems();
+  }
+
+  @override
+  void didUpdateWidget(InventoryListScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.containerId != widget.containerId) {
+      _loadItems();
+    }
   }
 
   @override
@@ -35,14 +52,26 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
   }
 
   Future<void> _loadItems() async {
-    final List<Item> items = widget.containerId == null
-        ? await _storage.getAllItems()
-        : await _storage.getItems(widget.containerId!);
-    if (!mounted) return;
     setState(() {
-      _items = items;
-      _isLoading = false;
+      _isLoading = true;
+      _errorMessage = null;
     });
+    try {
+      final List<Item> items = widget.containerId == null
+          ? await _storage.getAllItems()
+          : await _storage.getItems(widget.containerId!);
+      if (!mounted) return;
+      setState(() {
+        _items = items;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Impossibile caricare l\'inventario. Riprova.';
+      });
+    }
   }
 
   List<Item> get _visibleItems {
@@ -74,10 +103,17 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
             ),
           ],
         ),
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: 'Cerca in tutta la casa',
+            onPressed: () => context.push('/search'),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         tooltip: 'Scansiona un oggetto',
-        onPressed: () => context.go(
+        onPressed: () => context.push(
           widget.containerId == null
               ? '/capture'
               : '/capture?containerId=${widget.containerId}',
@@ -86,64 +122,95 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (String value) => setState(() => _query = value),
-                    decoration: const InputDecoration(
-                      hintText: 'Cerca oggetti',
-                      prefixIcon: Icon(Icons.search),
-                    ),
-                  ),
-                ),
-                if (categories.isNotEmpty)
-                  SizedBox(
-                    height: 42,
-                    child: ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      scrollDirection: Axis.horizontal,
+          : _errorMessage != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: const Text('Tutti'),
-                            selected: _category == null,
-                            onSelected: (_) => setState(() => _category = null),
-                          ),
-                        ),
-                        ...categories.map(
-                          (String category) => Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: ChoiceChip(
-                              label: Text(category),
-                              selected: _category == category,
-                              onSelected: (_) => setState(
-                                () => _category =
-                                    _category == category ? null : category,
-                              ),
-                            ),
-                          ),
+                        Text(_errorMessage!, textAlign: TextAlign.center),
+                        const SizedBox(height: 12),
+                        FilledButton(
+                          onPressed: _loadItems,
+                          child: const Text('Riprova'),
                         ),
                       ],
                     ),
                   ),
-                Expanded(
-                  child: items.isEmpty
-                      ? _buildEmptyState(context)
-                      : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
-                          itemCount: items.length,
-                          separatorBuilder: (BuildContext context, int index) =>
-                              const SizedBox(height: 10),
-                          itemBuilder: (BuildContext context, int index) =>
-                              _InventoryRow(item: items[index]),
+                )
+              : Column(
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (String value) =>
+                            setState(() => _query = value),
+                        decoration: const InputDecoration(
+                          labelText: 'Filtra oggetti',
+                          hintText: 'Cerca oggetti',
+                          prefixIcon: Icon(Icons.search),
                         ),
+                      ),
+                    ),
+                    if (categories.isNotEmpty)
+                      SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: <Widget>[
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: const Text('Tutti'),
+                                selected: _category == null,
+                                onSelected: (_) =>
+                                    setState(() => _category = null),
+                              ),
+                            ),
+                            ...categories.map(
+                              (String category) => Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: ChoiceChip(
+                                  label: Text(category),
+                                  selected: _category == category,
+                                  onSelected: (_) => setState(
+                                    () => _category =
+                                        _category == category ? null : category,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    Expanded(
+                      child: items.isEmpty
+                          ? _buildEmptyState(context)
+                          : ListView.separated(
+                              padding:
+                                  const EdgeInsets.fromLTRB(16, 12, 16, 96),
+                              itemCount: items.length,
+                              separatorBuilder:
+                                  (BuildContext context, int index) =>
+                                      const SizedBox(height: 10),
+                              itemBuilder: (BuildContext context, int index) =>
+                                  _InventoryRow(
+                                item: items[index],
+                                onTap: items[index].id == null
+                                    ? null
+                                    : () async {
+                                        await context.push(
+                                          '/items/${items[index].id}',
+                                        );
+                                        if (mounted) _loadItems();
+                                      },
+                              ),
+                            ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
     );
   }
 
@@ -185,9 +252,10 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
 }
 
 class _InventoryRow extends StatelessWidget {
-  const _InventoryRow({required this.item});
+  const _InventoryRow({required this.item, this.onTap});
 
   final Item item;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -200,6 +268,7 @@ class _InventoryRow extends StatelessWidget {
         ),
         title: Text(item.name),
         subtitle: Text(item.category),
+        onTap: onTap,
         trailing: Container(
           constraints: const BoxConstraints(minWidth: 40),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -209,6 +278,7 @@ class _InventoryRow extends StatelessWidget {
           ),
           child: Text(
             'x${item.quantity}',
+            semanticsLabel: 'Quantità ${item.quantity}',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.labelLarge,
           ),

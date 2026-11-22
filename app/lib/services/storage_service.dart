@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import '../models/container.dart' as models;
 import '../models/house.dart';
 import '../models/item.dart';
+import '../models/item_location.dart';
 import '../models/room.dart';
 import 'database_opener.dart' if (dart.library.html) 'database_opener_web.dart';
 
@@ -108,6 +109,15 @@ class StorageService {
       'containers',
       where: 'roomId = ?',
       whereArgs: <Object?>[roomId],
+    );
+    return result.map(models.Container.fromMap).toList();
+  }
+
+  Future<List<models.Container>> getAllContainers() async {
+    final Database db = await initDb();
+    final List<Map<String, dynamic>> result = await db.query(
+      'containers',
+      orderBy: 'name ASC',
     );
     return result.map(models.Container.fromMap).toList();
   }
@@ -258,5 +268,94 @@ class StorageService {
       orderBy: 'insertedAt DESC',
     );
     return result.map(Item.fromMap).toList();
+  }
+
+  Future<List<ItemLocation>> searchItemsWithLocation(String query) async {
+    final String trimmed = query.trim();
+    if (trimmed.isEmpty) return <ItemLocation>[];
+
+    final Database db = await initDb();
+    final String pattern = '%${trimmed.toLowerCase()}%';
+    final List<Map<String, dynamic>> result = await db.rawQuery(
+      '''
+      SELECT
+        i.id, i.name, i.category, i.shortDescription, i.photoPath,
+        i.containerId, i.insertedAt, i.quantity,
+        c.name AS containerName, c.type AS containerType,
+        r.name AS roomName,
+        h.name AS houseName
+      FROM items i
+      JOIN containers c ON c.id = i.containerId
+      JOIN rooms r ON r.id = c.roomId
+      JOIN houses h ON h.id = r.houseId
+      WHERE lower(i.name) LIKE ?
+         OR lower(i.category) LIKE ?
+         OR lower(i.shortDescription) LIKE ?
+         OR lower(c.name) LIKE ?
+         OR lower(r.name) LIKE ?
+      ORDER BY i.insertedAt DESC
+      ''',
+      <Object?>[pattern, pattern, pattern, pattern, pattern],
+    );
+    return result.map(ItemLocation.fromMap).toList();
+  }
+
+  Future<ItemLocation?> getItemLocation(int itemId) async {
+    final Database db = await initDb();
+    final List<Map<String, dynamic>> result = await db.rawQuery(
+      '''
+      SELECT
+        i.id, i.name, i.category, i.shortDescription, i.photoPath,
+        i.containerId, i.insertedAt, i.quantity,
+        c.name AS containerName, c.type AS containerType,
+        r.name AS roomName,
+        h.name AS houseName
+      FROM items i
+      JOIN containers c ON c.id = i.containerId
+      JOIN rooms r ON r.id = c.roomId
+      JOIN houses h ON h.id = r.houseId
+      WHERE i.id = ?
+      LIMIT 1
+      ''',
+      <Object?>[itemId],
+    );
+    if (result.isEmpty) return null;
+    return ItemLocation.fromMap(result.single);
+  }
+
+  Future<void> updateItem(Item item) async {
+    final int? itemId = item.id;
+    if (itemId == null) {
+      throw ArgumentError('Cannot update an item without id');
+    }
+    final Database db = await initDb();
+    final int updated = await db.update(
+      'items',
+      <String, Object?>{
+        'name': item.name,
+        'category': item.category,
+        'shortDescription': item.shortDescription,
+        'photoPath': item.photoPath,
+        'containerId': item.containerId,
+        'quantity': item.quantity,
+      },
+      where: 'id = ?',
+      whereArgs: <Object?>[itemId],
+    );
+    if (updated != 1) {
+      throw StateError('Item $itemId does not exist');
+    }
+  }
+
+  Future<void> deleteItem(int itemId) async {
+    final Database db = await initDb();
+    final int deleted = await db.delete(
+      'items',
+      where: 'id = ?',
+      whereArgs: <Object?>[itemId],
+    );
+    if (deleted != 1) {
+      throw StateError('Item $itemId does not exist');
+    }
   }
 }

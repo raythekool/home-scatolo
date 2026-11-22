@@ -1,0 +1,16 @@
+$kind: http-request
+name: 'Admin Overview & Scan Logs'
+method: GET
+url: '{{baseUrl}}/api/admin/overview'
+order: 7000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('returns admin overview stats and scan logs', () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body).to.have.property('stats');
+        pm.expect(body).to.have.property('recognition');
+        pm.expect(body.scanLogs).to.be.an('array');
+      });

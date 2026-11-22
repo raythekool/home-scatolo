@@ -11,8 +11,8 @@ tags:
   - azure
   - github-actions
 ai_note: Assisted documentation based on verified repository and Azure state.
-summary: Technical handoff for the Home Scatolo implementation, deployments, and Azure AI Foundry migration.
-post_date: 2026-08-25
+summary: Technical handoff for the Home Scatolo implementation, self-hosted MiniPC backend, and Azure AI Foundry state.
+post_date: 2026-11-22
 ---
 
 <!-- markdownlint-disable MD041 -->
@@ -61,8 +61,29 @@ az bicep build --file infra/main.bicep
 docker build and GET /health for the backend image
 ```
 
-The Flutter suite most recently passed 25 tests. The backend most recently
-passed 6 tests, including Azure Foundry request construction.
+The Flutter suite most recently passed 25 tests in prior runs; the new remote
+storage client changes (`STORAGE_MODE=remote`, `RemoteStorageService`,
+`ApiClient` token/same-origin support) still require `flutter analyze` and
+`flutter test` verification in CI (Flutter SDK is not installed in the current
+local environment).
+
+The backend most recently passed:
+
+- `npm run build` (`tsc --noEmit`)
+- `npm test`: 25 passing tests covering SQLite + FTS5 inventory CRUD and
+  enriched path search, multi-method auth (Cloudflare Access RS256 JWT, Google
+  OAuth 2.0 with email allowlist, password HttpOnly sessions + 429 rate-limit,
+  and scoped read/write API tokens), Admin Console APIs (overview stats, live
+  Ollama `/api/tags`, atomic runtime AI settings, `VACUUM INTO` SQLite backup,
+  CSV export with formula-injection protection, strict JSON import
+  dry-run/apply, FTS5/integrity maintenance, scan logs), global Express JSON
+  error handling, `/admin` static UI with security headers, static PWA serving,
+  recognition payload validation, Azure Foundry request construction, and
+  pluggable Vision AI providers (`none` handling + automatic cloud-to-Ollama
+  fallback + HTTP 502 on invalid upstream schemas).
+- `./.agents/skills/backend-tester/scripts/run-backend-qa.sh` and
+  `./.agents/skills/frontend-tester/scripts/run-frontend-qa.sh`: both PASS
+  (Flutter SDK checks skipped locally, pending CI).
 
 ## Current Public Frontend
 
@@ -83,26 +104,76 @@ The PWA must not call a hosted AI provider directly with a secret key. Its
 compiled JavaScript is publicly downloadable from GitHub Pages, so any token
 embedded in it would be recoverable.
 
-The backend remains a stateless Node.js and Express proxy with these routes:
+The backend is a Node.js 22 and Express 5 service supporting both stateless
+recognition and self-hosted persistent household inventory storage via built-in
+`node:sqlite` (WAL mode + FTS5 full-text search). Exposed routes include:
 
-- `GET /health`
-- `POST /recognize`
+- `GET /livez` (process + SQLite liveness check)
+- `GET /health` (database + vision provider readiness + auth status)
+- `POST /recognize` and `POST /api/recognize`
+- `GET/POST/PATCH/DELETE` under `/api/houses`, `/api/rooms`, `/api/containers`,
+  `/api/items`, plus `/api/quick-scan-container`, `/api/items/:id/increment`,
+  `/api/search` (returning full `houseName > roomName > containerName` paths),
+  `/api/state/:key`, and `/api/export`.
+
+Authentication and administration controls:
+
+- Multi-method authentication in [auth.ts](../backend/src/auth.ts) and
+  [routes/auth.ts](../backend/src/routes/auth.ts):
+  - Cryptographic RS256 verification of **Cloudflare Access** JWTs
+    (`CF_ACCESS_TEAM_DOMAIN` + `CF_ACCESS_AUD`, JWKS cached from
+    `/cdn-cgi/access/certs`, optional `AUTH_ALLOWED_EMAILS`).
+  - Optional direct **Google OAuth 2.0** (`GOOGLE_CLIENT_ID`,
+    `GOOGLE_CLIENT_SECRET`, mandatory `AUTH_ALLOWED_EMAILS`) issuing signed
+    `HttpOnly` session cookies (`hs_session`).
+  - Rate-limited password/token login (`ADMIN_PASSWORD` or `APP_API_TOKEN`)
+    issuing the same `HttpOnly` session cookie (usable by both `/admin` and the
+    same-origin Flutter PWA without embedding static secrets in client JS).
+  - Scoped SQLite API tokens (`read` / `write`, SHA-256 hashed) manageable from
+    `/admin` for LAN consumers such as Hermes Agent and Home Assistant.
+- Self-hosted Web Admin Console served at `/admin`
+  ([routes/admin.ts](../backend/src/routes/admin.ts),
+  [admin/public/](../backend/src/admin/public/index.html)) with strict CSP and
+  security headers: dashboard KPIs, live Ollama model discovery, Vision test
+  runner, scan logs, full spaces/items management, printable SVG QR box labels,
+  runtime AI/prompt settings, consistent SQLite `VACUUM INTO` backup download,
+  CSV/JSON export & import, and DB maintenance.
+- When `PUBLIC_WEB_DIR` points to a compiled Flutter web bundle, Express also
+  serves the PWA directly with SPA fallback so a single self-hosted container
+  can run behind a Cloudflare Tunnel without CORS complexity.
 
 The backend validates input and returns generic `502` responses for inference
 failures. It must not log Base64 image contents, authorization headers, or
 credentials.
 
-GitHub Models was used during local development. The active migration target is
-Azure AI Foundry backed by Azure OpenAI. The backend now uses
-`DefaultAzureCredential`, which resolves to Azure Managed Identity in Container
-Apps and can use Azure CLI credentials during local development.
+Vision recognition supports a pluggable provider chain with automatic fallback
+(`AI_PRIMARY_PROVIDER` → `AI_FALLBACK_PROVIDER`): `github-models`,
+`anthropic`, `openai-compatible`, `ollama` (local self-hosted fallback), and
+`azure-foundry` (`DefaultAzureCredential`).
 
 Relevant implementation files:
 
+- [app.ts](../backend/src/app.ts)
 - [server.ts](../backend/src/server.ts)
+- [db.ts](../backend/src/db.ts)
+- [auth.ts](../backend/src/auth.ts)
+- [inventory.ts](../backend/src/routes/inventory.ts)
+- [providers.ts](../backend/src/vision/providers.ts)
 - [foundry_client.ts](../backend/src/foundry_client.ts)
 - [recognition.ts](../backend/src/recognition.ts)
 - [api_client.dart](../app/lib/services/api_client.dart)
+- [remote_storage_service.dart](../app/lib/services/remote_storage_service.dart)
+- [storage_factory.dart](../app/lib/services/storage_factory.dart)
+- [item_location.dart](../app/lib/models/item_location.dart)
+- [item_detail_screen.dart](../app/lib/screens/item_detail_screen.dart)
+- [search_screen.dart](../app/lib/screens/search_screen.dart)
+- [postman/collections/home-scatolo-api](../postman/collections/home-scatolo-api/.resources/definition.yaml)
+- [Dockerfile.minipc](../Dockerfile.minipc)
+- [docker-compose.yml](../docker-compose.yml)
+- [docker-compose.minipc.yml](../docker-compose.minipc.yml)
+- [deploy-minipc.yml](../.github/workflows/deploy-minipc.yml)
+- [bootstrap-minipc.sh](../scripts/bootstrap-minipc.sh)
+- [MINIPC_DEPLOY.md](MINIPC_DEPLOY.md)
 
 ## Hosting Evaluation
 
@@ -177,9 +248,30 @@ The baseline infrastructure is defined in [main.bicep](../infra/main.bicep).
 It deploys the model only when `deployModel=true`; this separates stable
 infrastructure creation from region- and quota-dependent model provisioning.
 
+## MiniPC CI/CD Pipeline
+
+[deploy-minipc.yml](../.github/workflows/deploy-minipc.yml) automates end-to-end
+self-hosted delivery on pushes to `main` and manual dispatch:
+
+1. Runs `flutter analyze`, `flutter test`, and builds the remote-mode same-origin
+   PWA (`STORAGE_MODE=remote`, `API_BASE_URL=`).
+2. Runs `npm run build` and `npm test` on the Node 22 backend.
+3. Builds an all-in-one `linux/amd64` Docker image via
+   [Dockerfile.minipc](../Dockerfile.minipc) (backend + compiled PWA) and pushes
+   it to `ghcr.io/raythekool/home-scatolo:latest` and `:sha-<commit>`.
+4. Supports zero-touch updates on the MiniPC via label-scoped Watchtower in
+   [docker-compose.minipc.yml](../docker-compose.minipc.yml) (default, no open
+   SSH ports), or optional immediate SSH deploy when `MINIPC_DEPLOY_MODE=ssh`.
+5. First-time MiniPC provisioning is automated by
+   [bootstrap-minipc.sh](../scripts/bootstrap-minipc.sh) (directories, `.env`
+   with random `APP_API_TOKEN`, Ollama `qwen2.5vl:3b` check/pull, daily SQLite
+   `VACUUM INTO` backup cron, and stack startup).
+
 ## Azure Deployment Automation
 
-[deploy-backend.yml](../.github/workflows/deploy-backend.yml) is prepared to:
+[deploy-backend.yml](../.github/workflows/deploy-backend.yml) is configured for
+manual `workflow_dispatch` only (to avoid failing pushes while MiniPC is the
+active target) and is prepared to:
 
 1. Build and test the Node 22 backend.
 2. Sign into Azure using GitHub OIDC.
@@ -256,9 +348,8 @@ endpoint variable accordingly.
 
 ## Scope Not Yet Implemented
 
+- Persistent server-side photo storage (`/data/uploads/`).
+- Multi-user accounts and offline-first bidirectional sync queue.
 - Azure Static Web Apps migration.
-- User authentication and multi-user synchronization.
-- Cloud database and persistent server-side inventory.
-- Blob Storage for source photos.
-- Custom domain, WAF, rate limiting, and comprehensive telemetry.
+- Rate limiting on non-auth routes and comprehensive telemetry.
 - Automated model evaluation, prompt versioning workflow, and usage budgets.

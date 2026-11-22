@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 620" role="img" aria-label="Architettura Home Scatolo Self-Hosted su MiniPC">
+  <defs>
+    <style>
+      .bg { fill: #F4F2EC; }
+      .title { font: 700 22px system-ui, -apple-system, sans-serif; fill: #123447; }
+      .subtitle { font: 500 13px system-ui, -apple-system, sans-serif; fill: #3C5868; }
+      .zone { fill: #FFFFFF; stroke: #CBD4D0; stroke-width: 1.5; rx: 14; }
+      .zone-minipc { fill: #FAF9F5; stroke: #123447; stroke-width: 2; stroke-dasharray: 8 5; rx: 16; }
+      .card { fill: #FFFFFF; stroke: #123447; stroke-width: 1.5; rx: 10; }
+      .card-accent { fill: #123447; stroke: #123447; stroke-width: 1.5; rx: 10; }
+      .card-orange { fill: #FDEBE5; stroke: #C84B28; stroke-width: 1.8; rx: 10; }
+      .card-ok { fill: #E7F6EE; stroke: #146C43; stroke-width: 1.6; rx: 10; }
+      .card-warn { fill: #FFF4DF; stroke: #9A5B00; stroke-width: 1.6; rx: 10; }
+      .h { font: 700 14px system-ui, -apple-system, sans-serif; fill: #123447; }
+      .h-white { font: 700 14px system-ui, -apple-system, sans-serif; fill: #FFFFFF; }
+      .p { font: 400 12px system-ui, -apple-system, sans-serif; fill: #3C5868; }
+      .p-white { font: 400 12px system-ui, -apple-system, sans-serif; fill: #D5E4EC; }
+      .tag { font: 700 11px ui-monospace, monospace; fill: #C84B28; }
+      .tag-ok { font: 700 11px ui-monospace, monospace; fill: #146C43; }
+      .edge { stroke: #123447; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .edge-accent { stroke: #C84B28; stroke-width: 2.2; fill: none; marker-end: url(#arrow-orange); }
+      .edge-dashed { stroke: #8A5300; stroke-width: 2; stroke-dasharray: 6 4; fill: none; marker-end: url(#arrow-warn); }
+      .edge-label { font: 600 11px system-ui, -apple-system, sans-serif; fill: #123447; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#123447"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#C84B28"/>
+    </marker>
+    <marker id="arrow-warn" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#8A5300"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1120" height="620" rx="16"/>
+
+  <!-- Header -->
+  <text x="34" y="42" class="title">Home Scatolo — Architettura Self-Hosted su MiniPC</text>
+  <text x="34" y="64" class="subtitle">PWA Flutter + Backend Node 22 / SQLite FTS5 + Vision AI con Fallback Ollama + Cloudflare Tunnel / Access</text>
+
+  <!-- Left Column: Clients -->
+  <rect class="card" x="34" y="102" width="210" height="104"/>
+  <text x="50" y="128" class="h">Smartphone / Tablet</text>
+  <text x="50" y="148" class="p">PWA Flutter (HTTPS)</text>
+  <text x="50" y="166" class="p">Fotocamera + QR Scatoloni</text>
+  <text x="50" y="188" class="tag">STORAGE_MODE=remote</text>
+
+  <rect class="card" x="34" y="232" width="210" height="96"/>
+  <text x="50" y="258" class="h">Browser Desktop</text>
+  <text x="50" y="278" class="p">Console Admin (/admin)</text>
+  <text x="50" y="296" class="p">Gestione, QR, Backup, AI</text>
+  <text x="50" y="314" class="tag">Google / Cloudflare Access</text>
+
+  <rect class="card-ok" x="34" y="410" width="210" height="106"/>
+  <text x="50" y="436" class="h">Hermes Agent &amp; HA</text>
+  <text x="50" y="456" class="p">Domotica &amp; AI in LAN/Docker</text>
+  <text x="50" y="474" class="p">GET /api/search?q=...</text>
+  <text x="50" y="496" class="tag-ok">X-Api-Key (scope: read)</text>
+
+  <!-- Cloudflare Edge -->
+  <rect class="card-orange" x="282" y="152" width="160" height="122"/>
+  <text x="298" y="180" class="h">Cloudflare Edge</text>
+  <text x="298" y="200" class="p">Zero Trust Tunnel</text>
+  <text x="298" y="218" class="p">HTTPS + Access</text>
+  <text x="298" y="236" class="p">(Google IdP JWT)</text>
+  <text x="298" y="258" class="tag">Zero porte aperte</text>
+
+  <!-- MiniPC Zone -->
+  <rect class="zone-minipc" x="480" y="92" width="606" height="494"/>
+  <text x="502" y="120" class="h">MiniPC Debian 13 (Intel N97 • 16 GB RAM • Docker Compose)</text>
+
+  <!-- Main App Container -->
+  <rect class="card-accent" x="504" y="140" width="318" height="236"/>
+  <text x="524" y="168" class="h-white">Container: home-scatolo (:3000)</text>
+  <text x="524" y="190" class="p-white">Node.js 22 + Express 5 + TypeScript</text>
+  <rect x="522" y="206" width="282" height="36" rx="6" fill="rgba(255,255,255,0.12)"/>
+  <text x="534" y="229" class="p-white">Static PWA (/) + Console Admin (/admin)</text>
+  <rect x="522" y="250" width="282" height="36" rx="6" fill="rgba(255,255,255,0.12)"/>
+  <text x="534" y="273" class="p-white">Auth: CF RS256 / Google / Cookie / API Key</text>
+  <rect x="522" y="294" width="282" height="36" rx="6" fill="rgba(255,255,255,0.12)"/>
+  <text x="534" y="317" class="p-white">REST Inventario (/api/*) + Vision Router</text>
+  <text x="524" y="358" class="p-white" style="font-family: ui-monospace, monospace; font-size: 11px;">ghcr.io/raythekool/home-scatolo:latest</text>
+
+  <!-- SQLite Volume -->
+  <rect class="card-ok" x="504" y="424" width="318" height="136"/>
+  <text x="524" y="452" class="h">Volume Persistente (/data)</text>
+  <text x="524" y="474" class="p">inventory.db — SQLite WAL + FTS5</text>
+  <text x="524" y="494" class="p">houses • rooms • containers • items</text>
+  <text x="524" y="514" class="p">app_settings • scan_logs • api_tokens</text>
+  <text x="524" y="540" class="tag-ok">Backup cron 03:15 (VACUUM INTO, 14gg)</text>
+
+  <!-- Watchtower -->
+  <rect class="card" x="854" y="452" width="208" height="108"/>
+  <text x="870" y="478" class="h">Watchtower (CD)</text>
+  <text x="870" y="498" class="p">Aggiornamento automatico</text>
+  <text x="870" y="516" class="p">da GHCR ogni 5 minuti</text>
+  <text x="870" y="540" class="tag">Label-scoped only</text>
+
+  <!-- AI Providers (Right) -->
+  <rect class="card-orange" x="854" y="140" width="208" height="118"/>
+  <text x="870" y="168" class="h">AI Primario (Cloud)</text>
+  <text x="870" y="188" class="p">GitHub Models (GPT-4o)</text>
+  <text x="870" y="206" class="p">o Anthropic (Claude)</text>
+  <text x="870" y="224" class="p">o OpenAI-compatible</text>
+  <text x="870" y="244" class="tag">Veloce • Alta precisione</text>
+
+  <rect class="card-warn" x="854" y="286" width="208" height="118"/>
+  <text x="870" y="314" class="h">Ollama Locale (Fallback)</text>
+  <text x="870" y="334" class="p">Container Ollama :11434</text>
+  <text x="870" y="352" class="p">qwen2.5vl:3b / gemma3:4b</text>
+  <text x="870" y="370" class="p">100% locale &amp; privato</text>
+  <text x="870" y="390" class="tag" style="fill:#8A5300;">Auto-fallback su errori/429</text>
+
+  <!-- Edges -->
+  <path class="edge-accent" d="M 244 154 L 278 190"/>
+  <path class="edge-accent" d="M 244 280 L 278 236"/>
+  <path class="edge-accent" d="M 442 213 L 500 213"/>
+  <text x="450" y="202" class="edge-label">Tunnel</text>
+
+  <path class="edge" d="M 244 463 L 462 463 L 462 320 L 500 320"/>
+  <text x="275" y="453" class="edge-label">LAN / Docker HTTP</text>
+
+  <path class="edge" d="M 663 376 L 663 420"/>
+  <text x="674" y="403" class="edge-label">node:sqlite</text>
+
+  <path class="edge-accent" d="M 822 200 L 850 200"/>
+  <path class="edge-dashed" d="M 822 332 L 850 332"/>
+  <path class="edge" d="M 958 452 L 958 424 L 826 355"/>
+</svg>

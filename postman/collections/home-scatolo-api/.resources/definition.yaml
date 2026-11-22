@@ -1,0 +1,19 @@
+$kind: collection
+name: Home Scatolo API
+description: Contratto HTTP e suite di test end-to-end per il backend self-hosted Home Scatolo (SQLite + FTS5 + Vision AI + Admin).
+auth:
+  type: apikey
+  credentials:
+    - key: key
+      value: X-Api-Key
+    - key: value
+      value: '{{apiToken}}'
+    - key: in
+      value: header
+variables:
+  - key: baseUrl
+    value: 'http://127.0.0.1:3000'
+    description: URL base del backend Home Scatolo
+  - key: houseId
+    value: '1'
+    description: ID casa usato nei test concatenati

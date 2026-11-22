@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 560" role="img" aria-label="Modello Dati e Flusso Autenticazione Home Scatolo">
+  <defs>
+    <style>
+      .bg { fill: #F4F2EC; }
+      .title { font: 700 21px system-ui, -apple-system, sans-serif; fill: #123447; }
+      .sub { font: 500 13px system-ui, -apple-system, sans-serif; fill: #3C5868; }
+      .section { fill: #FFFFFF; stroke: #D2DAD6; stroke-width: 1.5; rx: 14; }
+      .node { fill: #FAF9F5; stroke: #123447; stroke-width: 1.6; rx: 10; }
+      .node-hi { fill: #FDEBE5; stroke: #C84B28; stroke-width: 1.8; rx: 10; }
+      .node-ok { fill: #E7F6EE; stroke: #146C43; stroke-width: 1.6; rx: 10; }
+      .h { font: 700 14px system-ui, -apple-system, sans-serif; fill: #123447; }
+      .mono { font: 500 11.5px ui-monospace, monospace; fill: #3C5868; }
+      .badge { font: 700 11px ui-monospace, monospace; fill: #C84B28; }
+      .badge-ok { font: 700 11px ui-monospace, monospace; fill: #146C43; }
+      .arrow { stroke: #123447; stroke-width: 2; fill: none; marker-end: url(#m-ink); }
+      .arrow-o { stroke: #C84B28; stroke-width: 2; fill: none; marker-end: url(#m-org); }
+    </style>
+    <marker id="m-ink" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#123447"/>
+    </marker>
+    <marker id="m-org" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#C84B28"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1120" height="560" rx="16"/>
+  <text x="34" y="40" class="title">Modello Dati SQLite + Flusso di Autenticazione Multi-Livello</text>
+  <text x="34" y="62" class="sub">Gerarchia a 4 livelli con integrità referenziale CASCADE, ricerca FTS5 e controllo accessi per ruolo</text>
+
+  <!-- Top Section: Data Model -->
+  <rect class="section" x="34" y="84" width="1052" height="214"/>
+  <text x="54" y="112" class="h">1. Modello Dati Gerarchico &amp; Ricerca FTS5 (inventory.db)</text>
+
+  <rect class="node" x="54" y="132" width="175" height="122"/>
+  <text x="68" y="156" class="h">houses</text>
+  <text x="68" y="178" class="mono">id (PK)</text>
+  <text x="68" y="196" class="mono">name</text>
+  <text x="68" y="214" class="mono">created_at</text>
+  <text x="68" y="232" class="mono">updated_at</text>
+
+  <rect class="node" x="266" y="132" width="180" height="122"/>
+  <text x="280" y="156" class="h">rooms</text>
+  <text x="280" y="178" class="mono">id (PK)</text>
+  <text x="280" y="196" class="mono">name</text>
+  <text x="280" y="214" class="mono">house_id (FK)</text>
+  <text x="280" y="236" class="badge">ON DELETE CASCADE</text>
+
+  <rect class="node" x="484" y="132" width="194" height="122"/>
+  <text x="498" y="156" class="h">containers</text>
+  <text x="498" y="178" class="mono">id (PK) • name</text>
+  <text x="498" y="196" class="mono">type (armadio|scatolone|</text>
+  <text x="498" y="212" class="mono">      libreria|cassetto)</text>
+  <text x="498" y="230" class="mono">room_id (FK) • notes</text>
+
+  <rect class="node-hi" x="716" y="132" width="196" height="146"/>
+  <text x="730" y="156" class="h">items</text>
+  <text x="730" y="178" class="mono">id (PK) • name</text>
+  <text x="730" y="196" class="mono">category • quantity &gt; 0</text>
+  <text x="730" y="214" class="mono">short_description</text>
+  <text x="730" y="232" class="mono">notes • photo_path</text>
+  <text x="730" y="250" class="mono">container_id (FK)</text>
+  <text x="730" y="268" class="mono">inserted_at • updated_at</text>
+
+  <rect class="node-ok" x="944" y="132" width="124" height="146"/>
+  <text x="956" y="156" class="h">items_fts</text>
+  <text x="956" y="178" class="mono">FTS5 Virtual</text>
+  <text x="956" y="196" class="mono">unicode61</text>
+  <text x="956" y="214" class="mono">remove_</text>
+  <text x="956" y="230" class="mono">diacritics 2</text>
+  <text x="956" y="258" class="badge-ok">Sync Trigger</text>
+
+  <path class="arrow" d="M 229 192 L 262 192"/>
+  <path class="arrow" d="M 446 192 L 480 192"/>
+  <path class="arrow" d="M 678 192 L 712 192"/>
+  <path class="arrow-o" d="M 912 192 L 940 192"/>
+
+  <!-- Bottom Section: Auth & RBAC -->
+  <rect class="section" x="34" y="320" width="1052" height="214"/>
+  <text x="54" y="348" class="h">2. Controllo Accessi Multi-Livello &amp; Ruoli (auth.ts)</text>
+
+  <rect class="node-hi" x="54" y="370" width="236" height="140"/>
+  <text x="70" y="394" class="h">Cloudflare Access (Google)</text>
+  <text x="70" y="416" class="mono">Cf-Access-Jwt-Assertion</text>
+  <text x="70" y="434" class="mono">Verifica firma RS256 JWKS</text>
+  <text x="70" y="452" class="mono">aud + iss + exp + email</text>
+  <text x="70" y="492" class="badge">Ruolo: admin (PWA + /admin)</text>
+
+  <rect class="node" x="314" y="370" width="236" height="140"/>
+  <text x="330" y="394" class="h">Google OAuth / Password</text>
+  <text x="330" y="416" class="mono">/api/auth/google &amp; /login</text>
+  <text x="330" y="434" class="mono">Allowlist email + Rate Limit</text>
+  <text x="330" y="452" class="mono">Cookie HttpOnly HMAC-SHA256</text>
+  <text x="330" y="492" class="badge">Ruolo: admin (PWA + /admin)</text>
+
+  <rect class="node-ok" x="574" y="370" width="236" height="140"/>
+  <text x="590" y="394" class="h">Scoped API Tokens</text>
+  <text x="590" y="416" class="mono">X-Api-Key / Bearer hs_...</text>
+  <text x="590" y="434" class="mono">Hash SHA-256 in api_tokens</text>
+  <text x="590" y="452" class="mono">Hermes Agent / Home Assistant</text>
+  <text x="590" y="492" class="badge-ok">Ruolo: read oppure write</text>
+
+  <rect class="node" x="844" y="370" width="224" height="140"/>
+  <text x="860" y="394" class="h">Protezione Rotte</text>
+  <text x="860" y="418" class="mono">GET /livez, /health → open</text>
+  <text x="860" y="438" class="mono">GET /api/* → read+</text>
+  <text x="860" y="458" class="mono">POST/PATCH /api/* → write+</text>
+  <text x="860" y="478" class="mono">POST /recognize → write+</text>
+  <text x="860" y="498" class="mono">/api/admin/* → solo admin</text>
+
+  <path class="arrow" d="M 810 440 L 840 440"/>
+</svg>

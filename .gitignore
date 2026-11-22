@@ -33,9 +33,17 @@ yarn-error.log*
 # ---- Env & secrets ----
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 secrets.json
+
+# ---- Local Self-Hosted Data ----
+data/
+backend/data/
+*.db
+*.db-shm
+*.db-wal
 
 # ---- OS ----
 .DS_Store

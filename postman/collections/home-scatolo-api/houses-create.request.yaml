@@ -1,0 +1,25 @@
+$kind: http-request
+name: 'Create House'
+method: POST
+url: '{{baseUrl}}/api/houses'
+order: 4000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Casa Vaiano"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('creates house and stores id', () => {
+        pm.response.to.have.status(201);
+        const body = pm.response.json();
+        pm.expect(body.id).to.be.a('number');
+        pm.expect(body.name).to.eql('Casa Vaiano');
+        pm.collectionVariables.set('houseId', String(body.id));
+      });

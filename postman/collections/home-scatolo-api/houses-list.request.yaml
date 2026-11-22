@@ -1,0 +1,14 @@
+$kind: http-request
+name: 'List Houses'
+method: GET
+url: '{{baseUrl}}/api/houses'
+order: 3000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('lists houses array', () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.houses).to.be.an('array');
+      });

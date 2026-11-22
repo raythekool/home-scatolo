@@ -75,7 +75,7 @@ class HomeScatoloApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const Color ink = Color(0xFF123447);
-    const Color scanOrange = Color(0xFFE66B4A);
+    const Color scanOrange = Color(0xFFC24929);
     const Color paper = Color(0xFFF4F2EC);
     return MaterialApp.router(
       title: 'Home Scatolo',

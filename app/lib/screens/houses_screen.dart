@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/house.dart';
+import '../services/storage_factory.dart';
 import '../services/storage_service.dart';
 
 class HousesScreen extends StatefulWidget {
@@ -17,10 +18,11 @@ class HousesScreen extends StatefulWidget {
 
 class _HousesScreenState extends State<HousesScreen> {
   late final StorageService _storage =
-      widget.storageService ?? StorageService();
+      widget.storageService ?? createStorageService();
   final List<House> _houses = <House>[];
   int? _activeHouseId;
   bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -29,20 +31,32 @@ class _HousesScreenState extends State<HousesScreen> {
   }
 
   Future<void> _loadHouses() async {
-    final List<House> houses = await _storage.getHouses();
-    final int? activeHouseId = await _storage.getActiveHouseId();
-    if (!mounted) return;
     setState(() {
-      _houses
-        ..clear()
-        ..addAll(houses);
-      _activeHouseId = houses.any((House house) => house.id == activeHouseId)
-          ? activeHouseId
-          : houses.isEmpty
-              ? null
-              : houses.first.id;
-      _isLoading = false;
+      _isLoading = true;
+      _errorMessage = null;
     });
+    try {
+      final List<House> houses = await _storage.getHouses();
+      final int? activeHouseId = await _storage.getActiveHouseId();
+      if (!mounted) return;
+      setState(() {
+        _houses
+          ..clear()
+          ..addAll(houses);
+        _activeHouseId = houses.any((House house) => house.id == activeHouseId)
+            ? activeHouseId
+            : houses.isEmpty
+                ? null
+                : houses.first.id;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Impossibile caricare le case. Verifica la connessione.';
+      });
+    }
   }
 
   void _showAddDialog() {
@@ -55,7 +69,10 @@ class _HousesScreenState extends State<HousesScreen> {
           content: TextField(
             controller: controller,
             autofocus: true,
-            decoration: const InputDecoration(hintText: 'Nome casa'),
+            decoration: const InputDecoration(
+              labelText: 'Nome casa',
+              hintText: 'Es. Casa Vaiano',
+            ),
             textCapitalization: TextCapitalization.words,
             onSubmitted: (_) => _submit(ctx, controller),
           ),
@@ -71,7 +88,7 @@ class _HousesScreenState extends State<HousesScreen> {
           ],
         );
       },
-    );
+    ).whenComplete(controller.dispose);
   }
 
   Future<void> _submit(
@@ -80,16 +97,23 @@ class _HousesScreenState extends State<HousesScreen> {
   ) async {
     final String name = controller.text.trim();
     if (name.isEmpty) return;
-    final House house = House(name: name);
-    final int id = await _storage.insertHouse(house);
-    await _storage.setActiveHouseId(id);
-    if (!mounted) return;
-    setState(() {
-      _houses.add(house.copyWith(id: id));
-      _activeHouseId = id;
-    });
-    if (!ctx.mounted) return;
-    Navigator.of(ctx).pop();
+    try {
+      final House house = House(name: name);
+      final int id = await _storage.insertHouse(house);
+      await _storage.setActiveHouseId(id);
+      if (!mounted) return;
+      setState(() {
+        _houses.add(house.copyWith(id: id));
+        _activeHouseId = id;
+      });
+      if (!ctx.mounted) return;
+      Navigator.of(ctx).pop();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossibile aggiungere la casa.')),
+      );
+    }
   }
 
   Future<void> _selectHouse(House house) async {
@@ -106,10 +130,34 @@ class _HousesScreenState extends State<HousesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Case'),
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: 'Cerca nell\'inventario',
+            onPressed: () => context.push('/search'),
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _houses.isEmpty
+          : _errorMessage != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(_errorMessage!, textAlign: TextAlign.center),
+                        const SizedBox(height: 12),
+                        FilledButton(
+                          onPressed: _loadHouses,
+                          child: const Text('Riprova'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : _houses.isEmpty
               ? Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 440),
@@ -163,6 +211,7 @@ class _HousesScreenState extends State<HousesScreen> {
                     final bool isActive = house.id == _activeHouseId;
                     return Card(
                       child: ListTile(
+                        selected: isActive,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 8,
@@ -183,7 +232,7 @@ class _HousesScreenState extends State<HousesScreen> {
                             isActive ? 'Spazio attivo' : 'Tocca per aprire'),
                         trailing: Icon(
                           isActive ? Icons.check_circle : Icons.chevron_right,
-                          color: isActive ? Colors.green : null,
+                          color: isActive ? Colors.green.shade800 : null,
                         ),
                         onTap: () => _selectHouse(house),
                       ),

@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="it">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Home Scatolo — Console Amministrativa</title>
+    <link rel="stylesheet" href="/admin/styles.css" />
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <span class="brand-mark" aria-hidden="true">HS</span>
+            <div>
+                <h1 class="brand-title">Home Scatolo Admin</h1>
+                <div class="brand-subtitle">MiniPC Self-Hosted &bull; Inventario &amp; Vision AI</div>
+            </div>
+        </div>
+        <div class="topbar-actions">
+            <a class="btn btn-ghost-dark btn-sm" href="/">Apri App PWA</a>
+            <span id="session-pill" class="session-pill" hidden></span>
+            <button id="logout-btn" class="btn btn-ghost-dark btn-sm" type="button" hidden>Esci</button>
+        </div>
+    </header>
+
+    <!-- Login View -->
+    <main id="login-view" class="login-shell" hidden>
+        <section class="card login-card" aria-labelledby="login-heading">
+            <h2 id="login-heading">Accesso Amministrazione</h2>
+            <p class="help-text">Accedi per gestire inventario, modelli AI, backup e token API sul MiniPC.</p>
+            <p id="login-error" class="badge badge-danger" style="margin-top:0.75rem" hidden role="alert"></p>
+
+            <div id="google-login-wrap" style="margin-top:1rem" hidden>
+                <a class="btn btn-primary" style="width:100%" href="/api/auth/google">Accedi con Google</a>
+                <div class="divider">oppure</div>
+            </div>
+
+            <form id="password-login-form" style="margin-top:0.75rem" hidden>
+                <div class="field">
+                    <label for="login-password">Password o API Token</label>
+                    <input
+                        id="login-password"
+                        name="password"
+                        type="password"
+                        autocomplete="current-password"
+                        required
+                        placeholder="Inserisci ADMIN_PASSWORD o APP_API_TOKEN"
+                    />
+                </div>
+                <button class="btn btn-primary" style="width:100%" type="submit">Accedi</button>
+            </form>
+
+            <p id="cf-hint" class="help-text" style="margin-top:1rem" hidden>
+                Accesso tramite Cloudflare Access attivo: accedi dal tuo dominio protetto Zero Trust.
+            </p>
+        </section>
+    </main>
+
+    <!-- Authenticated Console -->
+    <div id="console-shell" hidden>
+        <div class="tabs-nav" role="tablist" focusgroup="tablist nomemory" aria-label="Sezioni amministrative">
+            <button id="tab-btn-overview" class="tab-btn" role="tab" aria-selected="true" focusgroupstart tabindex="0" data-tab="overview" type="button">Panoramica &amp; AI</button>
+            <button id="tab-btn-inventory" class="tab-btn" role="tab" aria-selected="false" tabindex="-1" data-tab="inventory" type="button">Inventario &amp; Spazi</button>
+            <button id="tab-btn-qr" class="tab-btn" role="tab" aria-selected="false" tabindex="-1" data-tab="qr" type="button">Etichette QR</button>
+            <button id="tab-btn-ai" class="tab-btn" role="tab" aria-selected="false" tabindex="-1" data-tab="ai" type="button">AI &amp; Prompt</button>
+            <button id="tab-btn-system" class="tab-btn" role="tab" aria-selected="false" tabindex="-1" data-tab="system" type="button">Sistema, Backup &amp; API</button>
+        </div>
+
+        <main class="container">
+            <!-- TAB 1: OVERVIEW -->
+            <section id="tab-overview" class="panel-host" role="tabpanel" aria-labelledby="tab-btn-overview">
+                <div class="panel">
+                <div class="grid-kpi" id="kpi-grid"></div>
+
+                <div class="grid-2">
+                    <article class="card">
+                        <div class="card-header">
+                            <h2>Stato Vision AI &amp; Ollama</h2>
+                            <button id="refresh-ollama-btn" class="btn btn-sm" type="button">Aggiorna Ollama</button>
+                        </div>
+                        <div id="vision-status-body"></div>
+                    </article>
+
+                    <article class="card">
+                        <div class="card-header">
+                            <h2>Test rapido riconoscimento</h2>
+                        </div>
+                        <form id="test-vision-form">
+                            <div class="field">
+                                <label for="test-vision-file">Carica una foto di prova (JPEG, PNG o WebP, max 5 MB)</label>
+                                <input id="test-vision-file" type="file" accept="image/jpeg,image/png,image/webp" required />
+                            </div>
+                            <button id="test-vision-submit" class="btn btn-primary" type="submit">Analizza con pipeline AI</button>
+                        </form>
+                        <div id="test-vision-result" style="margin-top:0.85rem" hidden></div>
+                    </article>
+                </div>
+
+                <article class="card">
+                    <div class="card-header">
+                        <h2 id="scan-logs-heading">Ultime scansioni AI</h2>
+                        <button id="refresh-overview-btn" class="btn btn-sm" type="button">Aggiorna</button>
+                    </div>
+                    <div class="table-wrap" tabindex="0" role="region" aria-labelledby="scan-logs-heading">
+                        <table class="responsive-table" style="--label-1:'Data';--label-2:'Provider';--label-3:'Fallback';--label-4:'Latenza';--label-5:'Oggetti';--label-6:'Esito'">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Data</th>
+                                    <th scope="col">Provider</th>
+                                    <th scope="col">Fallback</th>
+                                    <th scope="col">Latenza</th>
+                                    <th scope="col">Oggetti</th>
+                                    <th scope="col">Esito</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scan-logs-body"></tbody>
+                        </table>
+                    </div>
+                </article>
+                </div>
+            </section>
+
+            <!-- TAB 2: INVENTORY -->
+            <section id="tab-inventory" class="panel-host" role="tabpanel" aria-labelledby="tab-btn-inventory" hidden="until-found">
+                <div class="panel">
+                <div class="split-inventory">
+                    <aside class="card">
+                        <div class="card-header">
+                            <h2>Spazi di casa</h2>
+                            <button id="add-house-btn" class="btn btn-primary btn-sm" type="button">+ Casa</button>
+                        </div>
+                        <div class="row-inline" style="margin-bottom:0.75rem">
+                            <button id="show-all-items-btn" class="btn btn-sm" type="button">Mostra tutti gli oggetti</button>
+                        </div>
+                        <div id="space-tree"></div>
+                    </aside>
+
+                    <article class="card">
+                        <div class="card-header">
+                            <h2 id="items-heading">Tutti gli oggetti</h2>
+                            <button id="add-item-btn" class="btn btn-primary btn-sm" type="button">+ Nuovo oggetto</button>
+                        </div>
+                        <div class="row-inline" style="margin-bottom:0.9rem">
+                            <div class="field" style="flex:1;min-width:200px;margin:0">
+                                <label for="inventory-search" class="sr-only">Cerca oggetti</label>
+                                <input id="inventory-search" type="search" placeholder="Cerca per nome, categoria, stanza, contenitore o note..." />
+                            </div>
+                            <div class="field" style="min-width:160px;margin:0">
+                                <label for="inventory-category-filter" class="sr-only">Filtra per categoria</label>
+                                <select id="inventory-category-filter">
+                                    <option value="">Tutte le categorie</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="table-wrap" tabindex="0" role="region" aria-labelledby="items-heading">
+                            <table class="responsive-table" style="--label-1:'Oggetto';--label-2:'Categoria';--label-3:'Posizione';--label-4:'Quantità';--label-5:'Azioni'">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Oggetto</th>
+                                        <th scope="col">Categoria</th>
+                                        <th scope="col">Posizione</th>
+                                        <th scope="col">Quantit&agrave;</th>
+                                        <th scope="col">Azioni</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="items-table-body"></tbody>
+                            </table>
+                        </div>
+                    </article>
+                </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: QR LABELS -->
+            <section id="tab-qr" class="panel-host" role="tabpanel" aria-labelledby="tab-btn-qr" hidden="until-found">
+                <div class="panel">
+                <article class="card no-print">
+                    <div class="card-header">
+                        <h2>Generatore Etichette QR</h2>
+                        <div class="row-inline">
+                            <button id="qr-select-all-btn" class="btn btn-sm" type="button">Seleziona tutti</button>
+                            <button id="qr-clear-btn" class="btn btn-sm" type="button">Deseleziona</button>
+                            <button id="qr-print-btn" class="btn btn-primary btn-sm" type="button">Stampa etichette</button>
+                        </div>
+                    </div>
+                    <p class="help-text">
+                        Inquadrando il QR sullo scatolone con lo smartphone si apre direttamente il contenuto di quel contenitore in Home Scatolo.
+                    </p>
+                    <div id="qr-selector-list" class="row-inline" style="margin-top:0.85rem"></div>
+                </article>
+
+                <article class="card">
+                    <div id="qr-labels-grid" class="qr-grid"></div>
+                </article>
+                </div>
+            </section>
+
+            <!-- TAB 4: AI SETTINGS -->
+            <section id="tab-ai" class="panel-host" role="tabpanel" aria-labelledby="tab-btn-ai" hidden="until-found">
+                <div class="panel">
+                <article class="card">
+                    <div class="card-header">
+                        <h2>Configurazione Runtime Vision AI</h2>
+                    </div>
+                    <p class="help-text" style="margin-bottom:1rem">
+                        Le modifiche qui si applicano subito senza riavviare il container. Le API key restano al sicuro in <code>.env</code>.
+                    </p>
+                    <form id="ai-settings-form">
+                        <div class="grid-2">
+                            <div class="field">
+                                <label for="setting-primary">Provider primario</label>
+                                <select id="setting-primary">
+                                    <option value="">Auto (.env)</option>
+                                    <option value="github-models">GitHub Models</option>
+                                    <option value="anthropic">Anthropic (Claude)</option>
+                                    <option value="openai-compatible">OpenAI-compatible</option>
+                                    <option value="ollama">Ollama (locale)</option>
+                                    <option value="azure-foundry">Azure AI Foundry</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label for="setting-fallback">Provider fallback</label>
+                                <select id="setting-fallback">
+                                    <option value="">Auto (.env)</option>
+                                    <option value="ollama">Ollama (locale)</option>
+                                    <option value="github-models">GitHub Models</option>
+                                    <option value="anthropic">Anthropic (Claude)</option>
+                                    <option value="openai-compatible">OpenAI-compatible</option>
+                                    <option value="azure-foundry">Azure AI Foundry</option>
+                                    <option value="none">Disabilitato</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label for="setting-ollama-model">Modello Ollama (fallback locale)</label>
+                                <input id="setting-ollama-model" list="ollama-models-datalist" placeholder="es. qwen2.5vl:3b" />
+                                <datalist id="ollama-models-datalist"></datalist>
+                            </div>
+                            <div class="row-inline" style="align-items:flex-end">
+                                <div class="field" style="flex:1">
+                                    <label for="setting-cloud-timeout">Timeout cloud (ms)</label>
+                                    <input id="setting-cloud-timeout" type="number" min="1000" max="300000" placeholder="30000" />
+                                </div>
+                                <div class="field" style="flex:1">
+                                    <label for="setting-ollama-timeout">Timeout Ollama (ms)</label>
+                                    <input id="setting-ollama-timeout" type="number" min="1000" max="300000" placeholder="90000" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label for="setting-prompt">Prompt personalizzato (usa <code>{{existingItems}}</code> per la lista oggetti esistenti)</label>
+                            <textarea id="setting-prompt" placeholder="Lascia vuoto per usare il prompt di default"></textarea>
+                        </div>
+
+                        <div class="row-inline">
+                            <button class="btn btn-primary" type="submit">Salva impostazioni AI</button>
+                            <button id="reset-prompt-btn" class="btn" type="button">Ripristina prompt default</button>
+                        </div>
+                    </form>
+                </article>
+                </div>
+            </section>
+
+            <!-- TAB 5: SYSTEM, BACKUP & API TOKENS -->
+            <section id="tab-system" class="panel-host" role="tabpanel" aria-labelledby="tab-btn-system" hidden="until-found">
+                <div class="panel">
+                <div class="grid-2">
+                    <article class="card">
+                        <div class="card-header">
+                            <h2>Backup &amp; Esportazione</h2>
+                        </div>
+                        <p class="help-text" style="margin-bottom:0.9rem">
+                            Lo snapshot SQLite utilizza <code>VACUUM INTO</code> ed &egrave; consistente anche con l'app in uso.
+                        </p>
+                        <div class="row-inline">
+                            <a class="btn btn-primary" href="/api/admin/backup/sqlite">Scarica SQLite (.db)</a>
+                            <a class="btn" href="/api/admin/export/csv">Esporta CSV</a>
+                            <a class="btn" href="/api/export" download="home-scatolo-export.json">Esporta JSON</a>
+                        </div>
+
+                        <hr style="border:none;border-top:1px solid var(--border);margin:1.15rem 0" />
+                        <h3 style="margin-bottom:0.5rem">Manutenzione Database</h3>
+                        <div class="row-inline">
+                            <button id="check-integrity-btn" class="btn btn-sm" type="button">Verifica integrit&agrave; DB</button>
+                            <button id="rebuild-fts-btn" class="btn btn-sm" type="button">Ricostruisci indice FTS5</button>
+                        </div>
+                        <p id="maintenance-output" class="help-text" style="margin-top:0.65rem"></p>
+                    </article>
+
+                    <article class="card">
+                        <div class="card-header">
+                            <h2>Importazione JSON</h2>
+                        </div>
+                        <form id="import-json-form">
+                            <div class="field">
+                                <label for="import-json-file">Seleziona un file export JSON</label>
+                                <input id="import-json-file" type="file" accept="application/json,.json" required />
+                            </div>
+                            <div class="row-inline">
+                                <button id="import-dryrun-btn" class="btn" type="button">Anteprima (Dry-run)</button>
+                                <button id="import-apply-btn" class="btn btn-primary" type="submit">Importa dati</button>
+                            </div>
+                        </form>
+                        <p id="import-output" class="help-text" style="margin-top:0.75rem"></p>
+                    </article>
+                </div>
+
+                <article class="card">
+                    <div class="card-header">
+                        <h2 id="tokens-heading">Token API &amp; Integrazioni (Hermes Agent / Home Assistant)</h2>
+                    </div>
+                    <p class="help-text" style="margin-bottom:0.9rem">
+                        Crea token dedicati con permessi <strong>read-only</strong> per interrogare l'inventario da Hermes Agent o Home Assistant senza condividere le credenziali admin.
+                    </p>
+                    <form id="create-token-form" class="row-inline" style="margin-bottom:0.9rem;align-items:flex-end">
+                        <div class="field" style="flex:1;min-width:200px;margin:0">
+                            <label for="token-name">Nome integrazione</label>
+                            <input id="token-name" required placeholder="es. hermes-agent" />
+                        </div>
+                        <div class="field" style="min-width:160px;margin:0">
+                            <label for="token-scope">Permessi</label>
+                            <select id="token-scope">
+                                <option value="read">Solo lettura (read)</option>
+                                <option value="write">Lettura e scrittura (write)</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" type="submit">Genera token</button>
+                    </form>
+
+                    <div id="new-token-banner" class="card" style="background:var(--warn-bg);border-color:#f0c36d;margin-bottom:1rem" hidden>
+                        <strong>Copia ora questo token (non verr&agrave; pi&ugrave; mostrato):</strong>
+                        <pre id="new-token-value" class="code-block" style="margin:0.5rem 0"></pre>
+                    </div>
+
+                    <div class="table-wrap" tabindex="0" role="region" aria-labelledby="tokens-heading" style="margin-bottom:1rem">
+                        <table class="responsive-table" style="--label-1:'Nome';--label-2:'Prefisso';--label-3:'Permessi';--label-4:'Creato';--label-5:'Ultimo uso';--label-6:'Azioni'">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Nome</th>
+                                    <th scope="col">Prefisso</th>
+                                    <th scope="col">Permessi</th>
+                                    <th scope="col">Creato</th>
+                                    <th scope="col">Ultimo uso</th>
+                                    <th scope="col">Azioni</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tokens-table-body"></tbody>
+                        </table>
+                    </div>
+
+                    <h3 style="margin-bottom:0.5rem">Snippet rapido per Hermes Agent / Home Assistant</h3>
+                    <pre id="api-snippet" class="code-block"></pre>
+                </article>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal: Item Create / Edit -->
+    <dialog id="item-dialog" closedby="any" aria-labelledby="item-dialog-title">
+        <h2 id="item-dialog-title">Oggetto</h2>
+        <form id="item-dialog-form">
+            <input type="hidden" id="item-id" />
+            <div class="field">
+                <label for="item-name">Nome</label>
+                <input id="item-name" required />
+            </div>
+            <div class="grid-2">
+                <div class="field">
+                    <label for="item-category">Categoria</label>
+                    <input id="item-category" required placeholder="es. Elettronica, Attrezzi, Casa" />
+                </div>
+                <div class="field">
+                    <label for="item-quantity">Quantit&agrave;</label>
+                    <input id="item-quantity" type="number" min="1" value="1" required />
+                </div>
+            </div>
+            <div class="field">
+                <label for="item-container">Contenitore</label>
+                <select id="item-container" required></select>
+            </div>
+            <div class="field">
+                <label for="item-desc">Descrizione breve</label>
+                <input id="item-desc" />
+            </div>
+            <div class="field">
+                <label for="item-notes">Note</label>
+                <textarea id="item-notes" style="min-height:72px;font-family:var(--font-sans)"></textarea>
+            </div>
+            <div class="dialog-actions">
+                <button id="item-dialog-cancel" class="btn" type="button">Annulla</button>
+                <button class="btn btn-primary" type="submit">Salva</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- Modal: Space (House / Room / Container) -->
+    <dialog id="space-dialog" closedby="any" aria-labelledby="space-dialog-title">
+        <h2 id="space-dialog-title">Nuovo spazio</h2>
+        <form id="space-dialog-form">
+            <input type="hidden" id="space-kind" />
+            <input type="hidden" id="space-id" />
+            <input type="hidden" id="space-parent-id" />
+            <div class="field">
+                <label for="space-name">Nome</label>
+                <input id="space-name" required />
+            </div>
+            <div id="space-type-field" class="field" hidden>
+                <label for="space-type">Tipo contenitore</label>
+                <select id="space-type">
+                    <option value="scatolone">Scatolone</option>
+                    <option value="armadio">Armadio</option>
+                    <option value="libreria">Libreria</option>
+                    <option value="cassetto">Cassetto</option>
+                </select>
+            </div>
+            <div class="dialog-actions">
+                <button id="space-dialog-cancel" class="btn" type="button">Annulla</button>
+                <button class="btn btn-primary" type="submit">Salva</button>
+            </div>
+        </form>
+    </dialog>
+
+    <div role="region" aria-label="Notifiche">
+        <p class="sr-only">Annunci di stato</p>
+        <div id="toast-live" class="sr-only" aria-live="polite"></div>
+        <div id="toast" class="toast" popover="manual">
+            <span id="toast-message"></span>
+            <button
+                id="toast-close"
+                class="toast-close-btn"
+                type="button"
+                popovertarget="toast"
+                popovertargetaction="hide"
+                aria-label="Chiudi notifica"
+            >&times;</button>
+        </div>
+    </div>
+
+    <script type="module" src="/admin/app.js"></script>
+</body>
+</html>

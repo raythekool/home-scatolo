@@ -1,0 +1,17 @@
+$kind: http-request
+name: 'Liveness (/livez)'
+method: GET
+url: '{{baseUrl}}/livez'
+order: 1000
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('livez responds 200 with ok database', () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.status).to.eql('ok');
+        pm.expect(body.database).to.eql('ok');
+      });

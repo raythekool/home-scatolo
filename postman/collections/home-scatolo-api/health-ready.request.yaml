@@ -1,0 +1,18 @@
+$kind: http-request
+name: 'Readiness (/health)'
+method: GET
+url: '{{baseUrl}}/health'
+order: 2000
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('health returns database and recognition readiness', () => {
+        pm.expect([200, 503]).to.include(pm.response.code);
+        const body = pm.response.json();
+        pm.expect(body).to.have.property('database');
+        pm.expect(body).to.have.property('recognition');
+        pm.expect(body).to.have.property('authEnabled');
+      });
