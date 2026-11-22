@@ -61,11 +61,8 @@ az bicep build --file infra/main.bicep
 docker build and GET /health for the backend image
 ```
 
-The Flutter suite most recently passed 25 tests in prior runs; the new remote
-storage client changes (`STORAGE_MODE=remote`, `RemoteStorageService`,
-`ApiClient` token/same-origin support) still require `flutter analyze` and
-`flutter test` verification in CI (Flutter SDK is not installed in the current
-local environment).
+The Flutter suite passed in CI on Flutter 3.50.1 (`flutter analyze` with 0 issues after migrating to `package:material_ui` and `go_router ^18.0.0`, and `flutter test` with 36 passing tests covering models, duplicate matching, `ApiClient`, `RemoteStorageService`, `HousesScreen`, `ItemDetailScreen`, `SearchScreen`, and the Light/Dark theme toggle).
+`Deploy MiniPC Image` also succeeded in CI on commit `bb8c1cd`, building the same-origin remote PWA bundle and publishing `ghcr.io/raythekool/home-scatolo:latest` and `ghcr.io/raythekool/home-scatolo:sha-bb8c1cd...`.
 
 The backend most recently passed:
 
@@ -93,14 +90,10 @@ at runtime with a toggle and defaulting to the OS preference:
 - Light: Indigo & Graphite (`#3B5BDB` accent on `#F4F6FA`, CTA contrast 5.67:1).
 - Dark: Night & Amber (`#E07A3F` accent on `#11161D`, CTA contrast 6.11:1).
 
-Implementation: [app_theme.dart](../app/lib/theme/app_theme.dart),
-[theme_toggle_test.dart](../app/test/theme_toggle_test.dart),
-[styles.css](../backend/src/admin/public/styles.css) and
-[app.js](../backend/src/admin/public/app.js) (`initTheme`, `localStorage` key
-`hs_theme`). QR labels and print CSS always render on white paper. The Figma
-design system (tokens, components, screens) lives at
-<https://www.figma.com/design/dg84yVcT8nvTzX82zudH7g>. The new Flutter theme
-tests still require `flutter analyze` and `flutter test` in CI.
+Implementation: [app_theme.dart](../app/lib/theme/app_theme.dart), [theme_toggle_test.dart](../app/test/theme_toggle_test.dart), [styles.css](../backend/src/admin/public/styles.css) and [app.js](../backend/src/admin/public/app.js) (`initTheme`, `localStorage` key `hs_theme`).
+QR labels and print CSS always render on white paper.
+The Figma design system (tokens, components, screens) lives at <https://www.figma.com/design/dg84yVcT8nvTzX82zudH7g>.
+The Flutter theme tests are verified passing in CI (`Flutter CI` and `Deploy MiniPC Image`).
 
 ## Current Public Frontend
 
@@ -362,6 +355,10 @@ endpoint variable accordingly.
 | `f31ccf4` | Azure Foundry backend, Docker image, Bicep template, and OIDC workflow foundation.                             |
 | `76939db` | Defers model deployment until model quota/version is verified.                                                 |
 | `ff6b673` | Uses supported 30-day Log Analytics retention.                                                                 |
+| `82f98e4` | Self-hosted MiniPC backend, `/admin` console, MiniPC CI/CD, Phase 2 Flutter remote storage, and Diataxis docs. |
+| `47fd09f` | Dual Light/Dark theme (`Indaco & Grafite` / `Notte & Ambra`) with runtime toggle and updated docs.             |
+| `400fd4e` | Migrates Flutter app from deprecated `package:flutter/material.dart` to `package:material_ui` and `go_router` 18. |
+| `bb8c1cd` | Fixes dialog `TextEditingController` disposal lifecycle and `ItemDetailScreen` widget test viewport scrolling. |
 
 ## Scope Not Yet Implemented
 
