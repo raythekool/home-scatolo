@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:home_scatolo/models/container.dart' as models;
 import 'package:home_scatolo/models/item.dart';
@@ -6,6 +5,7 @@ import 'package:home_scatolo/models/item_location.dart';
 import 'package:home_scatolo/screens/item_detail_screen.dart';
 import 'package:home_scatolo/screens/search_screen.dart';
 import 'package:home_scatolo/services/storage_service.dart';
+import 'package:material_ui/material_ui.dart';
 
 class _FakeDetailSearchStorage implements StorageService {
   ItemLocation? storedLocation = ItemLocation(

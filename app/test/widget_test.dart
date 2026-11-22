@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:home_scatolo/models/house.dart';
 import 'package:home_scatolo/screens/houses_screen.dart';
 import 'package:home_scatolo/services/storage_service.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// In-memory storage service so widget tests don't depend on a real
 /// (platform-specific) database, which is unreliable/unavailable in CI.

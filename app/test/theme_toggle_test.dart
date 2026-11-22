@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:home_scatolo/theme/app_theme.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   testWidgets('ThemeToggleButton alterna tra Light (Indaco) e Dark (Notte)',

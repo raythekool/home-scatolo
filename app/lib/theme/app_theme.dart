@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Controller leggero per alternare tra tema chiaro (Indaco & Grafite)
 /// e tema scuro (Notte & Ambra) senza dipendenze esterne.
