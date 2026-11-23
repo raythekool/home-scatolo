@@ -11,8 +11,8 @@ tags:
   - azure
   - github-actions
 ai_note: Assisted documentation based on verified repository and Azure state.
-summary: Technical handoff for the Home Scatolo implementation, self-hosted MiniPC backend, and Azure AI Foundry state.
-post_date: 2026-11-22
+summary: Technical handoff for the Home Scatolo implementation, private self-hosted MiniPC local build, and archived Azure AI Foundry setup.
+post_date: 2026-11-23
 ---
 
 <!-- markdownlint-disable MD041 -->
@@ -178,10 +178,12 @@ Relevant implementation files:
 - [item_detail_screen.dart](../app/lib/screens/item_detail_screen.dart)
 - [search_screen.dart](../app/lib/screens/search_screen.dart)
 - [postman/collections/home-scatolo-api](../postman/collections/home-scatolo-api/.resources/definition.yaml)
+- [Dockerfile](../Dockerfile)
 - [Dockerfile.minipc](../Dockerfile.minipc)
 - [docker-compose.yml](../docker-compose.yml)
 - [docker-compose.minipc.yml](../docker-compose.minipc.yml)
 - [deploy-minipc.yml](../.github/workflows/deploy-minipc.yml)
+- [deploy-local.sh](../scripts/deploy-local.sh)
 - [bootstrap-minipc.sh](../scripts/bootstrap-minipc.sh)
 - [MINIPC_DEPLOY.md](MINIPC_DEPLOY.md)
 
@@ -192,10 +194,11 @@ The following options were evaluated:
 | Option                                     | Decision                                                                                                                             |
 | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Direct AI calls from PWA                   | Rejected. It exposes the provider credential.                                                                                        |
+| Self-hosted MiniPC (local Docker build)    | **Active target (private personal use)**. Builds Flutter PWA + Node 22 backend locally via [Dockerfile](../Dockerfile) and [docker-compose.yml](../docker-compose.yml) with zero public registry or cloud infra; uses GitHub Models primary + local Ollama fallback. |
 | Render Free                                | Prepared as a temporary option, but not selected as the long-term target because it sleeps after idle time.                          |
 | Cloudflare Workers Free                    | Not selected for image Base64 inference proxy because its 10 ms CPU limit is too narrow for reliable multi-megabyte request parsing. |
-| Azure Container Apps plus Azure AI Foundry | Selected. It preserves the Express API, supports Managed Identity, and can scale to zero.                                            |
-| Azure Static Web Apps                      | Deferred. GitHub Pages remains the frontend host during the first Azure migration phase.                                             |
+| Azure Container Apps plus Azure AI Foundry | Deferred / paused. Foundation resources and Bicep remain documented below, but personal deployment runs self-hosted on the MiniPC.   |
+| Azure Static Web Apps                      | Deferred.                                                                                                                            |
 
 The Render blueprint remains in [render.yaml](../render.yaml) as fallback until
 the Azure end-to-end flow is confirmed. Do not remove it before that point.
@@ -258,7 +261,27 @@ The baseline infrastructure is defined in [main.bicep](../infra/main.bicep).
 It deploys the model only when `deployModel=true`; this separates stable
 infrastructure creation from region- and quota-dependent model provisioning.
 
-## MiniPC CI/CD Pipeline
+## MiniPC Self-Hosted Local Build (Active Target)
+
+For private single-user operation without publishing container images to GHCR or
+provisioning cloud resources:
+
+1. Root [Dockerfile](../Dockerfile) runs a multi-stage `linux/amd64` build:
+   downloads the official Flutter Linux stable SDK (`3.50.1`), compiles the
+   same-origin remote PWA (`STORAGE_MODE=remote`, `API_BASE_URL=`), installs
+   Node 22 backend dependencies, and produces a single runtime image serving
+   both `/` (PWA) and `/admin` + `/api/*`.
+2. [docker-compose.yml](../docker-compose.yml) builds directly from `.` using
+   `./.env` and persists SQLite in `./data:/data`.
+3. [deploy-local.sh](../scripts/deploy-local.sh) provides idempotent setup and
+   updates (`./scripts/deploy-local.sh --pull`): creates `./data` and
+   `./backups`, generates `./.env` from `backend/.env.example` (defaulting to
+   `AI_PRIMARY_PROVIDER=github-models` and `AI_FALLBACK_PROVIDER=ollama`),
+   pulls `qwen2.5vl:3b` on Ollama when present, runs
+   `docker compose up -d --build`, verifies `/livez` and `/health`, and
+   installs a daily `VACUUM INTO` SQLite backup cron job.
+
+## MiniPC CI/CD Pipeline (Optional GHCR Mode)
 
 [deploy-minipc.yml](../.github/workflows/deploy-minipc.yml) automates end-to-end
 self-hosted delivery on pushes to `main` and manual dispatch:
@@ -323,27 +346,32 @@ endpoint variable accordingly.
 
 ## Remaining Steps
 
+### Active Target: MiniPC Local Build
+
+1. Clone the repository on the MiniPC (Debian 13 + Docker) and create a
+   GitHub Fine-Grained PAT with `Models: Read` for `GITHUB_MODELS_TOKEN`.
+2. Run `GITHUB_MODELS_TOKEN=<pat> ./scripts/deploy-local.sh` to build the
+   all-in-one container locally, verify `/livez` and `/health`, and configure
+   the daily SQLite backup cron.
+3. Access privately over LAN (changing port mapping to `"3000:3000"` if needed)
+   or expose through Cloudflare Tunnel + Cloudflare Access.
+4. Verify end-to-end photo recognition via GitHub Models primary and Ollama
+   (`qwen2.5vl:3b`) fallback.
+
+### Deferred / Optional: Azure + Foundry Path
+
+If cloud hosting on Azure is resumed later:
+
 1. Confirm a vision-capable model deployment in Azure AI Foundry, including
    exact name, version, region, capacity, and deployment name.
 2. Deploy that model using [main.bicep](../infra/main.bicep) with
    `deployModel=true`, or create it through Foundry and keep the deployment
    name `home-scatolo-vision`.
 3. Create the Microsoft Entra application and GitHub OIDC federated credential
-   constrained to `repo:raythekool/home-scatolo:environment:production`.
-4. Assign the OIDC application enough deployment permissions, normally
-   Contributor on `rg-home-scatolo-prod` and AcrPush on
-   `acrhomescatoloprod`.
-5. Configure the GitHub Actions variables listed above.
-6. Run `Deploy Backend`, then verify:
-
-   ```bash
-   curl https://<container-app-fqdn>/health
-   ```
-
-7. Set GitHub Actions variable `API_BASE_URL` to the Container App HTTPS URL.
-8. Run `Deploy PWA` and exercise a real recognition request from GitHub Pages.
-9. Retire Render only after the Azure API, CORS, Foundry response parsing, and
-   PWA readiness states are verified end-to-end.
+   constrained to `repo:raythekool/home-scatolo:environment:production`, assign
+   `Contributor` on `rg-home-scatolo-prod` and `AcrPush` on
+   `acrhomescatoloprod`, configure the `AZURE_*` GitHub Actions variables, and
+   run `Deploy Backend` / `Deploy PWA`.
 
 ## Recent Implementation Commits
 

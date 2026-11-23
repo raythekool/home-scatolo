@@ -40,6 +40,8 @@ secrets.json
 
 # ---- Local Self-Hosted Data ----
 data/
+backups/
+backup-db.sh
 backend/data/
 *.db
 *.db-shm
@@ -51,6 +53,7 @@ Thumbs.db
 
 # ---- Logs ----
 *.log
+log*.txt
 
 # ---- Coverage ----
 coverage/

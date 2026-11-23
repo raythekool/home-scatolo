@@ -45,19 +45,20 @@ Questo repository organizza la documentazione secondo il framework **[Diátaxis]
 
 ## 🎓 Quick Start (Tutorial rapido)
 
-### 1. Deploy automatico sul tuo MiniPC (Debian + Docker)
+### 1. Deploy 100% locale sul tuo MiniPC (Debian + Docker, privato senza GHCR)
 
-Dopo il primo push su `main` (che pubblica l'immagine su GHCR), esegui **una volta sola** sul MiniPC:
+Clona il repository sul MiniPC e avvia build + container in un solo comando (non serve installare Flutter né pubblicare immagini su GHCR):
 
 ```bash
-PUBLIC_HOSTNAME=scatolo.tuodominio.it \
+git clone https://github.com/raythekool/home-scatolo.git /opt/home-scatolo
+cd /opt/home-scatolo
+
 GITHUB_MODELS_TOKEN=<pat-github-models-read> \
-curl -fsSL https://raw.githubusercontent.com/raythekool/home-scatolo/main/scripts/bootstrap-minipc.sh | bash
+./scripts/deploy-local.sh
 ```
 
-Poi aggiungi il Public Hostname sul tuo **Cloudflare Tunnel** verso `http://127.0.0.1:3000`:
-- 📱 App PWA: `https://scatolo.tuodominio.it/`
-- 🖥️ Console Admin: `https://scatolo.tuodominio.it/admin`
+Per aggiornare in seguito: `./scripts/deploy-local.sh --pull`.
+Accedi in locale/LAN su `http://127.0.0.1:3000/` (App PWA) e `/admin` (Console Admin), oppure collega il tuo **Cloudflare Tunnel** verso `http://127.0.0.1:3000` (dettagli e modalità opzionale GHCR in [docs/MINIPC_DEPLOY.md](docs/MINIPC_DEPLOY.md)).
 
 ### 2. Sviluppo locale (senza Docker)
 
@@ -100,10 +101,13 @@ home-scatolo/
 ├── docs/                        # Documentazione operativa interna (IMPLEMENTATION_STATUS, MINIPC_DEPLOY)
 ├── postman/                     # 📮 Contratto API Postman v3 (collection + environments Local/MiniPC)
 ├── .agents/skills/              # 🧪 Agenti QA automatizzati (backend-tester & frontend-tester)
-├── scripts/bootstrap-minipc.sh  # Bootstrap one-shot idempotente per MiniPC Debian
-├── Dockerfile.minipc            # Immagine all-in-one (Backend + PWA compilata)
-├── docker-compose.minipc.yml    # Stack produzione MiniPC (GHCR + Watchtower label-scoped)
-├── docker-compose.yml           # Stack build locale da sorgente
+├── scripts/
+│   ├── deploy-local.sh          # Build e avvio 100% locale su MiniPC (zero GHCR)
+│   └── bootstrap-minipc.sh      # Bootstrap one-shot opzionale via GHCR + Watchtower
+├── Dockerfile                   # Build multi-stage locale (PWA Flutter + Backend Node 22)
+├── Dockerfile.minipc            # Immagine CI all-in-one (copia PWA precompilata da GitHub Actions)
+├── docker-compose.yml           # Stack build locale da sorgente (privato)
+├── docker-compose.minipc.yml    # Stack opzionale GHCR + Watchtower label-scoped
 └── .github/workflows/           # CI/CD: deploy-minipc.yml, flutter-ci.yml, deploy-pwa.yml
 ```
 

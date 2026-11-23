@@ -1,24 +1,23 @@
 services:
   home-scatolo:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
     container_name: home-scatolo
     restart: unless-stopped
     env_file:
-      - ./backend/.env
+      - ./.env
     environment:
       - PORT=3000
       - DB_PATH=/data/inventory.db
+      - PUBLIC_WEB_DIR=/app/public
     ports:
       # Esposto solo su localhost del MiniPC: cloudflared inoltra verso http://127.0.0.1:3000
       # Cambia in "3000:3000" se vuoi raggiungerlo direttamente anche da altri dispositivi in LAN
       - "127.0.0.1:3000:3000"
     volumes:
-      # Database SQLite persistente (backup: copia la cartella ./data)
+      # Database SQLite persistente (backup: ./scripts/deploy-local.sh installa cron con VACUUM INTO)
       - ./data:/data
-      # Decommenta per servire anche la PWA Flutter dallo stesso container (imposta PUBLIC_WEB_DIR=/app/public in .env)
-      # - ./app/build/web:/app/public:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     # Se Ollama, cloudflared o Hermes Agent sono su una rete Docker condivisa, scommenta:
