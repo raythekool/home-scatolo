@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../models/house.dart';
 import '../models/room.dart';
 import '../services/storage_factory.dart';
 import '../services/storage_service.dart';
@@ -24,6 +25,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
   late final StorageService _storage =
       widget.storageService ?? createStorageService();
   final List<Room> _rooms = <Room>[];
+  String? _houseName;
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -57,11 +59,24 @@ class _RoomsScreenState extends State<RoomsScreen> {
     });
     try {
       final List<Room> rooms = await _storage.getRooms(houseId);
+      String? houseName;
+      try {
+        final List<House> houses = await _storage.getHouses();
+        for (final House house in houses) {
+          if (house.id == houseId) {
+            houseName = house.name;
+            break;
+          }
+        }
+      } catch (_) {
+        // Optional breadcrumb enrichment: ignore if storage fake omits getHouses.
+      }
       if (!mounted) return;
       setState(() {
         _rooms
           ..clear()
           ..addAll(rooms);
+        _houseName = houseName;
         _isLoading = false;
       });
     } catch (_) {
@@ -98,53 +113,126 @@ class _RoomsScreenState extends State<RoomsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Stanze'),
-        actions: const <Widget>[
-          ThemeToggleButton(),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const Text('Stanze'),
+            if (_houseName != null)
+              Text(
+                _houseName!,
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
+          ],
+        ),
+        actions: <Widget>[
+          const ThemeToggleButton(),
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: 'Cerca nell\'inventario',
+            onPressed: () => context.push('/search'),
+          ),
         ],
       ),
-      body: widget.houseId == null
-          ? const Center(child: Text('Seleziona una casa prima.'))
-          : _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(_errorMessage!, textAlign: TextAlign.center),
-                    const SizedBox(height: 12),
-                    FilledButton(
-                      onPressed: _loadRooms,
-                      child: const Text('Riprova'),
+      body: SafeArea(
+        child: widget.houseId == null
+            ? const Center(child: Text('Seleziona una casa prima.'))
+            : _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _errorMessage != null
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(_errorMessage!, textAlign: TextAlign.center),
+                      const SizedBox(height: 12),
+                      FilledButton(
+                        onPressed: _loadRooms,
+                        child: const Text('Riprova'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : _rooms.isEmpty
+            ? Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Icon(
+                          Icons.meeting_room_outlined,
+                          size: 52,
+                          color: colors.primary,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Nessuna stanza in questa casa',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Aggiungi la prima stanza (es. Cantina, Studio, Garage) per organizzare i contenitori.',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 20),
+                        FilledButton.icon(
+                          onPressed: _showAddDialog,
+                          icon: const Icon(Icons.add),
+                          label: const Text('Aggiungi stanza'),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
+                ),
+              )
+            : RefreshIndicator(
+                onRefresh: _loadRooms,
+                child: ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+                  itemCount: _rooms.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final Room room = _rooms[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Card(
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          leading: CircleAvatar(
+                            backgroundColor: colors.primaryContainer,
+                            child: Icon(
+                              Icons.meeting_room_outlined,
+                              color: colors.onPrimaryContainer,
+                            ),
+                          ),
+                          title: Text(room.name),
+                          subtitle: const Text('Tocca per aprire i contenitori'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            final int? id = room.id;
+                            if (id != null) {
+                              context.go('/containers?roomId=$id');
+                            }
+                          },
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
-            )
-          : _rooms.isEmpty
-          ? const Center(child: Text('Nessuna stanza. Aggiungine una!'))
-          : ListView.builder(
-              padding: const EdgeInsets.only(bottom: 96),
-              itemCount: _rooms.length,
-              itemBuilder: (BuildContext context, int index) {
-                final Room room = _rooms[index];
-                return ListTile(
-                  leading: const Icon(Icons.room),
-                  title: Text(room.name),
-                  onTap: () {
-                    final int? id = room.id;
-                    if (id != null) {
-                      context.go('/containers?roomId=$id');
-                    }
-                  },
-                );
-              },
-            ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: widget.houseId == null ? null : _showAddDialog,
         tooltip: 'Aggiungi stanza',

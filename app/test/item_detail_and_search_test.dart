@@ -1,8 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:home_scatolo/models/container.dart' as models;
+import 'package:home_scatolo/models/house.dart';
 import 'package:home_scatolo/models/item.dart';
 import 'package:home_scatolo/models/item_location.dart';
+import 'package:home_scatolo/models/room.dart';
+import 'package:home_scatolo/screens/inventory_list_screen.dart';
 import 'package:home_scatolo/screens/item_detail_screen.dart';
+import 'package:home_scatolo/screens/rooms_screen.dart';
 import 'package:home_scatolo/screens/search_screen.dart';
 import 'package:home_scatolo/services/storage_service.dart';
 import 'package:material_ui/material_ui.dart';
@@ -50,6 +54,21 @@ class _FakeDetailSearchStorage implements StorageService {
 
   @override
   Future<List<models.Container>> getAllContainers() async => containers;
+
+  @override
+  Future<List<House>> getHouses() async => const <House>[
+        House(id: 1, name: 'Casa Vaiano'),
+      ];
+
+  @override
+  Future<List<Room>> getRooms(int houseId) async =>
+      houseId == 1 ? const <Room>[Room(id: 2, name: 'Cantina', houseId: 1)] : const <Room>[];
+
+  @override
+  Future<List<Item>> getItems(int containerId) async =>
+      storedLocation != null && storedLocation!.item.containerId == containerId
+          ? <Item>[storedLocation!.item]
+          : <Item>[];
 
   @override
   Future<void> updateItem(Item item) async {
@@ -135,9 +154,72 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Cavo HDMI'), findsOneWidget);
+    expect(find.text('1 risultato trovato'), findsOneWidget);
     expect(
       find.textContaining('Casa Vaiano › Cantina › Scatola Cavi'),
       findsOneWidget,
     );
+
+    await tester.tap(find.byTooltip('Pulisci ricerca'));
+    await tester.pumpAndSettle();
+    expect(find.text('Elettronica'), findsOneWidget);
+  });
+
+  testWidgets('ItemDetailScreen shows inline validation error when name is empty',
+      (WidgetTester tester) async {
+    final _FakeDetailSearchStorage storage = _FakeDetailSearchStorage();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ItemDetailScreen(itemId: '9', storageService: storage),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).first, '');
+    final Finder saveButton = find.text('Salva modifiche');
+    await tester.scrollUntilVisible(
+      saveButton,
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.tap(saveButton);
+    await tester.pump();
+
+    expect(find.text('Inserisci il nome dell\'oggetto.'), findsOneWidget);
+    expect(storage.lastUpdated, isNull);
+  });
+
+  testWidgets('InventoryListScreen resolves QR deep link container header without title param',
+      (WidgetTester tester) async {
+    final _FakeDetailSearchStorage storage = _FakeDetailSearchStorage();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: InventoryListScreen(containerId: 3, storageService: storage),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Scatola Cavi'), findsOneWidget);
+    expect(find.text('Casa Vaiano › Cantina · scatolone'), findsOneWidget);
+  });
+
+  testWidgets('RoomsScreen shows house breadcrumb and card list',
+      (WidgetTester tester) async {
+    final _FakeDetailSearchStorage storage = _FakeDetailSearchStorage();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RoomsScreen(houseId: 1, storageService: storage),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Stanze'), findsOneWidget);
+    expect(find.text('Casa Vaiano'), findsOneWidget);
+    expect(find.text('Cantina'), findsOneWidget);
   });
 }

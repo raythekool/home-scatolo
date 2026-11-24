@@ -943,7 +943,12 @@ async function updateItemQty(item, delta) {
 }
 
 async function deleteItem(item) {
-    if (!window.confirm(`Eliminare "${item.name}" dall'inventario?`)) return;
+    const confirmed = await confirmAction({
+        title: 'Elimina oggetto',
+        message: `Eliminare "${item.name}" dall'inventario?`,
+        confirmLabel: 'Elimina',
+    });
+    if (!confirmed) return;
     try {
         await apiFetch(`/api/items/${item.id}`, { method: 'DELETE' });
         showToast('Oggetto eliminato.', 'ok');
@@ -954,11 +959,12 @@ async function deleteItem(item) {
 }
 
 async function deleteSpace(resource, id, label) {
-    if (
-        !window.confirm(
-            `Eliminare ${label}? Verranno eliminati in cascata anche tutti gli elementi contenuti.`,
-        )
-    ) {
+    const confirmed = await confirmAction({
+        title: 'Conferma eliminazione',
+        message: `Eliminare ${label}? Verranno eliminati in cascata anche tutti gli elementi contenuti.`,
+        confirmLabel: 'Elimina',
+    });
+    if (!confirmed) {
         return;
     }
     try {
@@ -1075,6 +1081,16 @@ function renderQrTab() {
 function renderQrCards(containers) {
     const grid = $('#qr-labels-grid');
     const selected = containers.filter((c) => state.selectedQrIds.has(c.id));
+    const printBtn = $('#qr-print-btn');
+    if (printBtn) {
+        printBtn.disabled = selected.length === 0;
+        printBtn.textContent =
+            selected.length === 0
+                ? 'Stampa etichette'
+                : selected.length === 1
+                  ? 'Stampa 1 etichetta'
+                  : `Stampa ${selected.length} etichette`;
+    }
     if (!selected.length) {
         grid.replaceChildren(
             el('p', { className: 'help-text' }, 'Seleziona almeno un contenitore sopra.'),
@@ -1173,13 +1189,68 @@ function renderTokensTable() {
 }
 
 async function revokeToken(tok) {
-    if (!window.confirm(`Revocare il token "${tok.name}"?`)) return;
+    const confirmed = await confirmAction({
+        title: 'Revoca token API',
+        message: `Revocare il token "${tok.name}"? Le integrazioni che lo usano perderanno subito l'accesso.`,
+        confirmLabel: 'Revoca token',
+    });
+    if (!confirmed) return;
     try {
         await apiFetch(`/api/admin/tokens/${tok.id}`, { method: 'DELETE' });
         showToast('Token revocato.', 'ok');
         await loadTokens();
     } catch (error) {
         showToast(error.message, 'error');
+    }
+}
+
+// ---- Confirmation Dialog & Clipboard Helpers ----
+
+function confirmAction({ title, message, confirmLabel = 'Conferma' }) {
+    const dialog = $('#confirm-dialog');
+    $('#confirm-dialog-title').textContent = title;
+    $('#confirm-dialog-message').textContent = message;
+    const okBtn = $('#confirm-dialog-ok');
+    const cancelBtn = $('#confirm-dialog-cancel');
+    okBtn.textContent = confirmLabel;
+
+    return new Promise((resolve) => {
+        let settled = false;
+        const finish = (accepted) => {
+            if (settled) return;
+            settled = true;
+            okBtn.removeEventListener('click', onOk);
+            cancelBtn.removeEventListener('click', onCancel);
+            dialog.removeEventListener('close', onClose);
+            if (dialog.open) dialog.close();
+            resolve(accepted);
+        };
+        const onOk = () => finish(true);
+        const onCancel = () => finish(false);
+        const onClose = () => finish(false);
+
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+        dialog.addEventListener('close', onClose);
+        dialog.showModal();
+    });
+}
+
+async function copyTextWithFeedback(text, button, defaultLabel) {
+    if (!text) return;
+    try {
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(text);
+        } else {
+            throw new Error('Clipboard API non disponibile');
+        }
+        button.textContent = 'Copiato!';
+        showToast('Copiato negli appunti.', 'ok');
+        setTimeout(() => {
+            button.textContent = defaultLabel;
+        }, 1800);
+    } catch {
+        showToast('Impossibile copiare automaticamente: seleziona il testo manualmente.', 'error');
     }
 }
 
@@ -1493,6 +1564,22 @@ function bindForms() {
         } catch (error) {
             showToast(error.message, 'error');
         }
+    });
+
+    $('#copy-token-btn').addEventListener('click', (ev) => {
+        copyTextWithFeedback(
+            $('#new-token-value').textContent,
+            ev.currentTarget,
+            'Copia token',
+        );
+    });
+
+    $('#copy-snippet-btn').addEventListener('click', (ev) => {
+        copyTextWithFeedback(
+            $('#api-snippet').textContent,
+            ev.currentTarget,
+            'Copia snippet',
+        );
     });
 }
 

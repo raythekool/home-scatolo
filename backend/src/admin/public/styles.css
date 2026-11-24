@@ -572,14 +572,22 @@ th {
 }
 
 .qty-btn {
-    min-width: 34px;
-    min-height: 34px;
+    min-width: 40px;
+    min-height: 40px;
     border: 1px solid var(--border);
     border-radius: 6px;
     background: var(--surface-muted);
     color: var(--ink);
     font-weight: 700;
     cursor: pointer;
+}
+
+@media (pointer: coarse) {
+    .btn-sm,
+    .qty-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
 }
 
 .qty-btn:hover {

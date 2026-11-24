@@ -171,41 +171,58 @@ class _HousesScreenState extends State<HousesScreen> {
                     ),
                   ),
                 )
-              : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
-                  itemCount: _houses.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final House house = _houses[index];
-                    final bool isActive = house.id == _activeHouseId;
-                    return Card(
-                      child: ListTile(
-                        selected: isActive,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        leading: CircleAvatar(
-                          backgroundColor: isActive
-                              ? Theme.of(context).colorScheme.primaryContainer
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHigh,
-                          child: Icon(
-                            Icons.home_outlined,
-                            color: Theme.of(context).colorScheme.primary,
+              : RefreshIndicator(
+                  onRefresh: _loadHouses,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
+                    itemCount: _houses.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final House house = _houses[index];
+                      final bool isActive = house.id == _activeHouseId;
+                      final ColorScheme colors = Theme.of(context).colorScheme;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: BorderSide(
+                              color: isActive ? colors.primary : colors.outline,
+                              width: isActive ? 1.5 : 1,
+                            ),
+                          ),
+                          child: ListTile(
+                            selected: isActive,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            leading: CircleAvatar(
+                              backgroundColor: isActive
+                                  ? colors.primaryContainer
+                                  : colors.surfaceContainerHigh,
+                              child: Icon(
+                                Icons.home_outlined,
+                                color: colors.primary,
+                              ),
+                            ),
+                            title: Text(house.name),
+                            subtitle: Text(
+                              isActive ? 'Spazio attivo' : 'Tocca per aprire',
+                            ),
+                            trailing: Icon(
+                              isActive
+                                  ? Icons.check_circle
+                                  : Icons.chevron_right,
+                              color: isActive
+                                  ? AppTheme.successColor(context)
+                                  : null,
+                            ),
+                            onTap: () => _selectHouse(house),
                           ),
                         ),
-                        title: Text(house.name),
-                        subtitle: Text(
-                            isActive ? 'Spazio attivo' : 'Tocca per aprire'),
-                        trailing: Icon(
-                          isActive ? Icons.check_circle : Icons.chevron_right,
-                          color: isActive ? AppTheme.successColor(context) : null,
-                        ),
-                        onTap: () => _selectHouse(house),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddDialog,

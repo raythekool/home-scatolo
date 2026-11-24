@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../models/container.dart' as models;
 import '../models/item.dart';
 import '../models/recognition_candidate.dart';
 import '../services/api_client.dart';
@@ -35,12 +36,14 @@ class _CaptureScreenState extends State<CaptureScreen> {
   Uint8List? _imageBytes;
   List<RecognitionDecision> _decisions = <RecognitionDecision>[];
   List<RecognitionAction> _selectedActions = <RecognitionAction>[];
+  List<int> _quantities = <int>[];
   bool _isRecognizing = false;
   bool _isSaving = false;
   bool _isPreparing = true;
   String? _prepareError;
   _BackendStatus _backendStatus = _BackendStatus.checking;
   int? _resolvedContainerId;
+  String? _containerLabel;
 
   @override
   void initState() {
@@ -57,9 +60,22 @@ class _CaptureScreenState extends State<CaptureScreen> {
     try {
       final int containerId =
           widget.containerId ?? await _storage.getOrCreateQuickScanContainer();
+      String? containerLabel;
+      try {
+        final List<models.Container> all = await _storage.getAllContainers();
+        for (final models.Container c in all) {
+          if (c.id == containerId) {
+            containerLabel = '${c.name} (${c.type.toValue()})';
+            break;
+          }
+        }
+      } catch (_) {
+        // Optional container label lookup.
+      }
       if (!mounted) return;
       setState(() {
         _resolvedContainerId = containerId;
+        _containerLabel = containerLabel;
         _isPreparing = false;
       });
     } catch (_) {
@@ -98,6 +114,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
       _imageBytes = bytes;
       _decisions = <RecognitionDecision>[];
       _selectedActions = <RecognitionAction>[];
+      _quantities = <int>[];
     });
   }
 
@@ -135,6 +152,9 @@ class _CaptureScreenState extends State<CaptureScreen> {
         _selectedActions = decisions
             .map((RecognitionDecision decision) => decision.action)
             .toList();
+        _quantities = decisions
+            .map((RecognitionDecision decision) => decision.candidate.quantity)
+            .toList();
       });
     } catch (_) {
       if (mounted) {
@@ -159,12 +179,13 @@ class _CaptureScreenState extends State<CaptureScreen> {
       for (int index = 0; index < _decisions.length; index++) {
         final RecognitionDecision decision = _decisions[index];
         final RecognitionAction action = _selectedActions[index];
+        final int quantity = _quantities[index];
         if (action == RecognitionAction.ignore) continue;
         if (action == RecognitionAction.mergeQuantity &&
             decision.matchedItem != null) {
           await _storage.incrementItemQuantity(
             itemId: decision.matchedItem!,
-            amount: decision.candidate.quantity,
+            amount: quantity,
           );
           continue;
         }
@@ -175,7 +196,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
             shortDescription: decision.candidate.shortDescription,
             containerId: containerId,
             insertedAt: DateTime.now(),
-            quantity: decision.candidate.quantity,
+            quantity: quantity,
           ),
         );
       }
@@ -303,6 +324,17 @@ class _CaptureScreenState extends State<CaptureScreen> {
                                 minimumSize: const Size.fromHeight(58),
                               ),
                             ),
+                            if (_isRecognizing) ...<Widget>[
+                              const SizedBox(height: 8),
+                              Semantics(
+                                liveRegion: true,
+                                child: Text(
+                                  'Analisi AI in corso: se il provider cloud non risponde interviene Ollama locale (~15–40s).',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ],
                           ],
                           if (_decisions.isNotEmpty) ...<Widget>[
                             const SizedBox(height: 24),
@@ -327,6 +359,17 @@ class _CaptureScreenState extends State<CaptureScreen> {
                                 minimumSize: const Size.fromHeight(58),
                               ),
                             ),
+                            if (_isRecognizing) ...<Widget>[
+                              const SizedBox(height: 8),
+                              Semantics(
+                                liveRegion: true,
+                                child: Text(
+                                  'Analisi AI in corso: se il provider cloud non risponde interviene Ollama locale (~15–40s).',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ],
                           ],
                         ],
                       ),
@@ -364,7 +407,11 @@ class _CaptureScreenState extends State<CaptureScreen> {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 4),
-                const Text('Scatta una foto o selezionala dalla galleria.'),
+                Text(
+                  _containerLabel != null
+                      ? 'Destinazione: $_containerLabel'
+                      : 'Scatta una foto o selezionala dalla galleria.',
+                ),
               ],
             ),
           ),
@@ -444,50 +491,120 @@ class _CaptureScreenState extends State<CaptureScreen> {
   Widget _buildDecision(int index) {
     final RecognitionDecision decision = _decisions[index];
     final RecognitionCandidate candidate = decision.candidate;
-    final List<RecognitionAction> actions = <RecognitionAction>[
+    final RecognitionAction currentAction = _selectedActions[index];
+    final int currentQuantity = _quantities[index];
+    final bool hasMatch = decision.matchedItem != null;
+    final List<RecognitionAction> availableActions = <RecognitionAction>[
       RecognitionAction.add,
-      if (decision.matchedItem != null) RecognitionAction.mergeQuantity,
+      if (hasMatch) RecognitionAction.mergeQuantity,
       RecognitionAction.ignore,
     ];
+    final Set<RecognitionAction> selectedSet =
+        availableActions.contains(currentAction)
+            ? <RecognitionAction>{currentAction}
+            : const <RecognitionAction>{};
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(candidate.name,
-                style: Theme.of(context).textTheme.titleMedium),
-            Text('${candidate.category} · Quantità ${candidate.quantity}'),
-            Text(candidate.shortDescription),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<RecognitionAction>(
-              isExpanded: true,
-              initialValue: actions.contains(_selectedActions[index])
-                  ? _selectedActions[index]
-                  : null,
-              decoration: InputDecoration(
-                labelText: 'Azione per ${candidate.name}',
-              ),
-              hint: const Text('Scegli cosa fare'),
-              items: actions
-                  .map(
-                    (RecognitionAction action) =>
-                        DropdownMenuItem<RecognitionAction>(
-                      value: action,
-                      child: Text(_actionLabel(action)),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          candidate.name,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          candidate.category,
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+                      ],
                     ),
-                  )
-                  .toList(),
-              onChanged: (RecognitionAction? action) {
-                if (action == null) return;
-                setState(() => _selectedActions[index] = action);
-              },
-            ),
-          ],
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      IconButton.outlined(
+                        tooltip: 'Diminuisci quantità per ${candidate.name}',
+                        onPressed: !_isSaving && currentQuantity > 1
+                            ? () => setState(() => _quantities[index]--)
+                            : null,
+                        icon: const Icon(Icons.remove),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Text(
+                          'x$currentQuantity',
+                          semanticsLabel: 'Quantità $currentQuantity',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                      ),
+                      IconButton.outlined(
+                        tooltip: 'Aumenta quantità per ${candidate.name}',
+                        onPressed: !_isSaving
+                            ? () => setState(() => _quantities[index]++)
+                            : null,
+                        icon: const Icon(Icons.add),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              if (candidate.shortDescription.isNotEmpty) ...<Widget>[
+                const SizedBox(height: 4),
+                Text(candidate.shortDescription),
+              ],
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: SegmentedButton<RecognitionAction>(
+                  emptySelectionAllowed: true,
+                  showSelectedIcon: false,
+                  segments: availableActions
+                      .map(
+                        (RecognitionAction action) =>
+                            ButtonSegment<RecognitionAction>(
+                          value: action,
+                          label: Text(_shortActionLabel(action)),
+                          tooltip: _actionLabel(action),
+                        ),
+                      )
+                      .toList(),
+                  selected: selectedSet,
+                  onSelectionChanged: _isSaving
+                      ? null
+                      : (Set<RecognitionAction> selection) {
+                          if (selection.isEmpty) return;
+                          setState(
+                            () => _selectedActions[index] = selection.first,
+                          );
+                        },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  String _shortActionLabel(RecognitionAction action) {
+    return switch (action) {
+      RecognitionAction.add => 'Nuovo',
+      RecognitionAction.mergeQuantity => 'Somma (+)',
+      RecognitionAction.review => 'Verifica',
+      RecognitionAction.ignore => 'Ignora',
+    };
   }
 
   String _actionLabel(RecognitionAction action) {
